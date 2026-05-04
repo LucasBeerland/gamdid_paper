@@ -1,0 +1,94 @@
+---
+title: 'Tutorial'
+author: "Lucas Beerland"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 3
+    theme: simplex
+    highlight: tango
+    number_sections: true
+---
+
+```{r}
+library(tidyverse)
+library(distinct)
+library(coin)
+library(RecordTest)
+library(msqrob2)
+library(poolr)
+library(harmonicmeanp)
+library(mgcv)
+source("functions/createCounts_function.R")
+source("functions/equalShapeGAM_function.R")
+source("functions/makeFdpCurve_function.R")
+source("functions/omnibus_function.R")
+source("functions/tprFdp_function.R")
+source("functions/visFit_function.R")
+```
+
+# Load in the dataset
+```{r}
+# minimal processed leduc dataset
+leduc <- readRDS("leduc_summarized.rds")
+```
+
+
+# Perform GAM, msqrob2 & omnibus analysis
+Outputs the p-values for the msqrob2 analysis (pval_location), the GAM analysis without centering (pval_shape) and the combined p-value (pval)
+```{r}
+pOmni <- omnibusTest(sce = getWithColData(leduc, "peptides_log"), 
+                     idA = which(leduc$SampleType == "Monocyte"), 
+                     idB = which(leduc$SampleType == "Melanoma"), 
+                     covariate = "SampleType", filterNA = 0.5)
+
+# FDR correction
+p_fdr <- p.adjust(pOmni$pval, method = "fdr")
+
+# find alpha level for multiple testing
+ord <- order(pOmni$pval)
+fdrAdj_alpha <- 0.05*(1:length(ord))/length(ord)
+stagewiseAdj_alpha_id <- sum(pOmni$pval[ord] < fdrAdj_alpha)
+stagewiseAdj_alpha <- fdrAdj_alpha[stagewiseAdj_alpha_id]
+```
+
+# Visualise the fit
+```{r}
+f <- "ILSGVVTK"
+# find differential regions
+# for stagewise testing approach -> adapt alpha significance level
+visFit(sce = getWithColData(leduc, "peptides_log"), feature = f, covariate = "SampleType", plot = "diff", adj_alpha = stagewiseAdj_alpha)
+visFit(sce = getWithColData(leduc, "peptides_log"), feature = f, covariate = "SampleType", plot = "hist", adj_alpha = stagewiseAdj_alpha)
+visFit(sce = getWithColData(leduc, "peptides_log"), feature = f, covariate = "SampleType", plot = "ecdf")
+```
+
+
+
+# Make fdp tpr curves
+
+## Define mock and significant groups
+```{r}
+leduc_filtered <- leduc[,leduc$SampleType == "Monocyte"]
+leduc_mock <- leduc_filtered
+set.seed(100)
+leduc_mock$SampleType <- sample(rep(x = c("A", "B"), length.out = length(leduc_mock$SampleType)))
+idA_mock <- which(leduc_mock$SampleType == "A")
+idB_mock <- which(leduc_mock$SampleType == "B")
+```
+
+## Perform analysis
+mock = TRUE -> random swapping of 20% of the genes (sign argument default 0.2)
+mock = FALSE -> no swapping or anything, just fdr tpr curve of the sce_mock
+```{r}
+# takes a few minutes to run
+logpep <- makeFdpCurve(sce_mock = getWithColData(leduc_mock, "peptides_log")[1:100], idA_mock, idB_mock, title = "logpep", NAfilter = 0.5, mock = T)
+
+# data to make the plot
+logpep$fdp
+
+# the plot
+logpep$plot
+```
+

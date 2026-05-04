@@ -1,0 +1,24 @@
+library("here")
+source(here("R", "packages.R"))
+source(here("R", "utils.R"))
+
+leduc_dd <- compDistr(leduc, i = "proteinSweep", covariate = "SampleType")
+
+visFit(leduc_dd, i = "proteinSweep", feature = "Q8TDN6", plot = "diff") -> p
+
+p$SampleTypeMelanoma_VS_SampleTypeMonocyte +
+  theme_paper() + theme(title = element_blank(), axis.title.y = element_blank(),
+                        strip.text = element_text(size = base_size*3, color = "black", face = "plain"),
+                        strip.placement = "outside",
+                        legend.text = element_text(size=base_size*3),
+                        legend.title = element_text(size = base_size*3),
+                        legend.key.size = unit(1,"cm"),
+                        axis.title.x = element_text(size = base_size*3),
+                        axis.text.x = element_text(size = base_size*2),
+                        axis.text.y = element_text(size = base_size*2)) -> fig4_poster
+fig4_poster$layers[[2]]$aes_params$linewidth <- 3
+
+
+ggsave(filename = here::here("figures", "scripts", "figures_poster", "fig4_poster.pdf"), plot = fig4_poster,
+       units = "cm", width = 24.7209, height = 26)
+

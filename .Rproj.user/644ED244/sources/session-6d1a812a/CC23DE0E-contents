@@ -1,0 +1,275 @@
+---
+title: 'Case study'
+author: "Lucas Beerland"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 3
+    theme: simplex
+    highlight: tango
+    number_sections: true
+---
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup, warning=FALSE, message=FALSE}
+library(mgcv)
+library(msqrob2)
+library(harmonicmeanp)
+library(stageR)
+library(tidyverse)
+library(stageR)
+library(ggpubr)
+library(lme4)
+
+source("../functions_package/compDistr.R")
+source("../functions_package/createCounts.R")
+source("../functions_package/equalShapeGAM.R")
+source("../functions_package/topFeaturesOmnibus.R")
+source("../functions_package/visFit.R")
+```
+
+# Load in a dataset
+
+```{r, warning=FALSE, message=FALSE}
+library(scpdata)
+#leduc <- leduc2022_pSCoPE()
+getwd()
+load(file = "leduc_processed.Rda")
+leduc <- QFeatures::aggregateFeatures(leduc,
+                         i = "peptides_log",
+                         name = "proteins",
+                         fcol = "Leading.razor.protein.id",
+                         fun = matrixStats::colMedians, na.rm = TRUE)
+
+sce <- getWithColData(leduc, "proteins")
+subcluster <- rep(NA, ncol(sce))
+subcluster[is.na(colData(sce)$MelanomaSubCluster)] <- "Monocyte"
+subcluster[colData(sce)$MelanomaSubCluster == "A"] <- "MelanomaA"
+subcluster[colData(sce)$MelanomaSubCluster == "B"] <- "MelanomaB"
+subcluster <- as.factor(subcluster)
+colData(sce)$subcluster <- subcluster
+```
+
+# Create an interesting setting
+
+With melanoma subclusters
+```{r}
+sce_leduc <- getWithColData(leduc, "proteins")
+leduc_melanoma <- sce_leduc[,leduc$MelanomaSubCluster %in% c("A", "B")]
+
+idA <- which(leduc_melanoma$MelanomaSubCluster == "A")
+idB <- which(leduc_melanoma$MelanomaSubCluster == "B")
+
+leduc_melanoma$group <- "Y"
+set.seed(1234)
+idX <- sample(idA, size = length(idA)/2)
+leduc_melanoma$group[idX] <- "X"
+leduc_mel <- leduc_melanoma
+```
+
+```{r}
+# remove some of the B's
+set.seed(12345)
+id_rm <- sample(idA, size = length(idA)*0.1)
+#leduc_mel_rm <- leduc_mel[,-id_rm]
+```
+
+
+With melanoma cells and monocytes
+```{r}
+sce_leduc <- getWithColData(leduc, "proteins")
+leduc_melA_mon <- sce_leduc[,sce_leduc$MelanomaSubCluster %in% "A" | sce_leduc$SampleType == "Monocyte"]
+
+id_melA <- which(leduc_melA_mon$SampleType == "Melanoma")
+id_mon <- which(leduc_melA_mon$SampleType == "Monocyte")
+
+leduc_melA_mon$group <- "Y"
+set.seed(1234)
+idX <- sample(id_mon, size = length(id_mon)/2)
+
+leduc_melA_mon$group[idX] <- "X"
+```
+
+```{r}
+# remove some of the B's
+set.seed(12345)
+id_rm <- sample(id_melA, size = length(id_melA)*0.92)
+leduc_melA_mon_rm <- leduc_melA_mon[,-id_rm]
+leduc_melA_mon_mock <- leduc_melA_mon[, -id_melA]
+```
+
+
+Melanoma subclusters
+
+# Conventional DE analysis
+
+```{r, warning=FALSE}
+leduc_mel_msqrob <- msqrob(leduc_mel, 
+                           formula= ~ group + lcbatch, modelColumnName = "msqrobModel")
+L <- makeContrast("groupY = 0", 
+                  parameterNames = names(getCoef(rowData(leduc_mel_msqrob)$msqrobModel[[1]])))
+leduc_mel_msqrob <- hypothesisTest(leduc_mel_msqrob, contrast = L, 
+                                   modelColumn = "msqrobModel", overwrite=TRUE)
+
+# first adjust for the covariates
+assay_adj <- removeBatchEffect(x = assay(leduc_mel), batch = leduc_mel$lcbatch,
+                               design = model.matrix(~leduc_mel$group))
+leduc_mel_adj <- leduc_mel
+assay(leduc_mel_adj) <- assay_adj
+leduc_mel_msqrob_adj <- msqrob(leduc_mel_adj, 
+                           formula= ~ group, modelColumnName = "msqrobModel")
+leduc_mel_msqrob_adj <- hypothesisTest(leduc_mel_msqrob_adj, contrast = L, 
+                                   modelColumn = "msqrobModel", overwrite=TRUE)
+
+# compare with gamdids approach
+leduc_mel_msqrob_adj2 <- msqrob(leduc_mel_gamdid, 
+                           formula= ~ group, modelColumnName = "msqrobModel")
+leduc_mel_msqrob_adj2 <- hypothesisTest(leduc_mel_msqrob_adj2, contrast = L, 
+                                   modelColumn = "msqrobModel", overwrite=TRUE)
+
+
+# visualisation
+ggplot(rowData(leduc_mel_msqrob)$"groupY",
+                 aes(x = logFC, y = -log10(pval), color = adjPval < 0.05)) +
+ geom_point(cex = 2.5) +
+ scale_color_manual(values = alpha(c("black", "red"), 0.5)) + theme_minimal()
+
+ggplot(rowData(leduc_mel_msqrob_adj)$"groupY",
+                 aes(x = logFC, y = -log10(pval), color = adjPval < 0.05)) +
+ geom_point(cex = 2.5) +
+ scale_color_manual(values = alpha(c("black", "red"), 0.5)) + theme_minimal()
+
+ggplot(rowData(leduc_mel_msqrob_adj2)$"groupY",
+                 aes(x = logFC, y = -log10(pval), color = adjPval < 0.05)) +
+ geom_point(cex = 2.5) +
+ scale_color_manual(values = alpha(c("black", "red"), 0.5)) + theme_minimal()
+```
+
+
+# DD analysis
+
+```{r, warning=FALSE}
+leduc_mel_gamdid <- compDistr(sce = leduc_mel, 
+                              covariate = "group", nuisance = ~lcbatch, filterNA = 0.5)
+
+
+# to comare with the mock analysis
+leduc_mel_gamdid_mock <- compDistr(sce = getWithColData(leduc_mel_mock, "proteins"), 
+                                   covariate = "group", nuisance = ~ lcbatch, filterNA = 0.5)
+
+prot_distrshift <- rownames(leduc_mel_gamdid)[which(rowData(leduc_mel_gamdid)$pval < 0.05)]
+
+id_distrshift <- rownames(rowData(leduc_mel_msqrob)$groupY) %in% prot_distrshift
+dat_distrshift <- rowData(leduc_mel_msqrob)$groupY[which(id_distrshift),]
+dat_nodistrshift <- rowData(leduc_mel_msqrob)$groupY[which(!id_distrshift),]
+
+ggplot() +
+ geom_point(dat = dat_nodistrshift, mapping = aes(x = logFC, y = -log10(pval)), alpha = 0.5, cex = 2.5, colour = "black") +
+ geom_point(dat = dat_distrshift, mapping = aes(x = logFC, y = -log10(pval)), alpha = 0.5, cex = 2.5, colour = "red")
+```
+
+# Compare results
+```{r}
+prot_meanshift <- rownames(leduc_mel_msqrob)[which(rowData(leduc_mel_msqrob)$groupY$adjPval < 0.05)]
+
+length(prot_meanshift)
+length(prot_distrshift)
+```
+
+
+# Visualise the significant distributions
+```{r, warning=FALSE}
+prot_distrshift_ordered <- dat_distrshift %>% rownames_to_column() %>% arrange(-abs(pval)) %>% pull(rowname)
+```
+
+
+```{r, warning=FALSE}
+visFit(leduc_mel_gamdid_mock, feature = prot_distrshift_ordered[3])
+visFit(leduc_mel_gamdid, feature = prot_distrshift_ordered[3])
+```
+
+
+
+
+Melanoma cells and monocytes
+
+# Conventional DE analysis
+```{r, warning=FALSE}
+leduc_melA_mon_msqrob <- msqrob(leduc_melA_mon_rm, 
+                           formula= ~ group + lcbatch, modelColumnName = "msqrobModel")
+L <- makeContrast("groupY = 0", 
+                  parameterNames = names(getCoef(rowData(leduc_melA_mon_msqrob)$msqrobModel[[1]])))
+leduc_melA_mon_msqrob <- hypothesisTest(leduc_melA_mon_msqrob, contrast = L, 
+                                   modelColumn = "msqrobModel", overwrite=TRUE)
+
+# first adjust for the covariates
+leduc_melA_mon_rm_adj <- leduc_melA_mon_rm
+assay_adj2 <- removeBatchEffect(x = assay(leduc_melA_mon_rm), batch = leduc_melA_mon_rm$lcbatch,
+                               design = model.matrix(~leduc_melA_mon_rm$group))
+assay(leduc_melA_mon_rm_adj) <- assay_adj2
+leduc_melA_mon_msqrob_adj <- msqrob(leduc_melA_mon_rm_adj, 
+                           formula= ~ group, modelColumnName = "msqrobModel")
+leduc_melA_mon_msqrob_adj <- hypothesisTest(leduc_melA_mon_msqrob_adj, contrast = L, 
+                                   modelColumn = "msqrobModel", overwrite=TRUE)
+
+
+# visualisation
+ggplot(rowData(leduc_melA_mon_msqrob)$"groupY",
+                 aes(x = logFC, y = -log10(pval), color = adjPval < 0.05)) +
+ geom_point(cex = 2.5) +
+ scale_color_manual(values = alpha(c("black", "red"), 0.5)) + theme_minimal()
+
+ggplot(rowData(leduc_melA_mon_msqrob_adj)$"groupY",
+                 aes(x = logFC, y = -log10(pval), color = adjPval < 0.05)) +
+ geom_point(cex = 2.5) +
+ scale_color_manual(values = alpha(c("black", "red"), 0.5)) + theme_minimal()
+```
+
+# DD analysis
+
+```{r, warning=FALSE}
+leduc_melA_mon_gamdid <- compDistr(sce = leduc_melA_mon_rm, 
+                              covariate = "group", nuisance = ~lcbatch, filterNA = 0.8)
+
+
+# to comare with the mock analysis
+leduc_melA_mon_gamdid_mock <- compDistr(sce = leduc_melA_mon_mock, 
+                                   covariate = "group", nuisance = ~ lcbatch, filterNA = 0.8)
+
+prot2_distrshift <- rownames(leduc_melA_mon_gamdid)[which(rowData(leduc_melA_mon_gamdid)$pval < 0.05)]
+
+id2_distrshift <- rownames(rowData(leduc_melA_mon_msqrob)$groupY) %in% prot2_distrshift
+dat2_distrshift <- rowData(leduc_melA_mon_msqrob)$groupY[which(id2_distrshift),]
+dat2_nodistrshift <- rowData(leduc_melA_mon_msqrob)$groupY[which(!id2_distrshift),]
+
+ggplot() +
+ geom_point(dat = dat2_nodistrshift, mapping = aes(x = logFC, y = -log10(pval)), alpha = 0.5, cex = 2.5, colour = "black") +
+ geom_point(dat = dat2_distrshift, mapping = aes(x = logFC, y = -log10(pval)), alpha = 0.5, cex = 2.5, colour = "red")
+```
+
+# Compare results
+```{r}
+prot2_meanshift <- rownames(leduc_melA_mon_msqrob)[which(rowData(leduc_melA_mon_msqrob)$groupY$adjPval < 0.05)]
+
+rowData(leduc_melA_mon_msqrob)$groupY %>% rownames_to_column() %>% arrange(pval) %>% pull(rowname)
+
+length(prot2_meanshift)
+length(prot2_distrshift)
+```
+
+```{r, warning=FALSE}
+prot2_distrshift_ordered <- dat2_distrshift %>% rownames_to_column() %>% arrange(-abs(pval)) %>% pull(rowname)
+```
+
+```{r}
+visFit(leduc_melA_mon_gamdid_mock, feature = prot2_distrshift_ordered[7])
+visFit(leduc_melA_mon_gamdid, feature = prot2_distrshift_ordered[7])
+```
+

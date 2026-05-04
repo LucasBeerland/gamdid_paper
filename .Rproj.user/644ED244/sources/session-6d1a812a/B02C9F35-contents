@@ -1,0 +1,36 @@
+library("here")
+source(here("R", "packages.R"))
+source(here("R", "utils.R"))
+
+leduc_case_distinct <- readRDS(here("caseStudy_results", "leduc_case_distinct"))
+leduc_case_msqrob <- readRDS(here("caseStudy_results", "leduc_case_msqrob"))
+
+prot_meanshift <- rownames(leduc_case_msqrob)[which(rowData(leduc_case_msqrob)$groupY$adjPval < 0.05)]
+prot_distrshift_distinct <- names(leduc_case_distinct)[which(leduc_case_distinct < 0.05)]
+
+length(prot_meanshift)
+length(prot_distrshift_distinct)
+
+id_distrshift_distinct <- rownames(rowData(leduc_case_msqrob)$groupY) %in% prot_distrshift_distinct
+
+dat_distrshift_distinct <- rowData(leduc_case_msqrob)$groupY[which(id_distrshift_distinct),]
+dat_nodistrshift_distinct <- rowData(leduc_case_msqrob)$groupY[which(!id_distrshift_distinct),]
+
+ggplot() +
+  geom_point(dat = dat_nodistrshift_distinct, mapping = aes(x = logFC, y = -log10(pval)), alpha = 0.5, cex = 1.5, colour = "black") +
+  geom_point(dat = dat_distrshift_distinct, mapping = aes(x = logFC, y = -log10(pval)), alpha = 0.5, cex = 1.5, colour = "red") +
+  theme_paper() +
+  ggtitle("DD analysis") +
+  theme(plot.title = element_text(size = base_size, face = "bold", hjust = 0.5))-> volcano_dd_distinct
+
+ggsave(filename = here::here("figures", "output", "jpg", "fig13.jpg"), plot = fig13,
+       width = FIG_WIDTH, height = FIG_HEIGHT_DOUBLE,
+       dpi = FIG_DPI)
+ggsave(filename = here::here("figures", "output", "pdf", "fig13.pdf"), plot = fig13,
+       width = FIG_WIDTH, height = FIG_HEIGHT_DOUBLE)
+
+gamdid_only <- prot_distrshift[which(!(prot_distrshift %in% prot_distrshift_distinct))]
+distinct_only <- prot_distrshift_distinct[which(!(prot_distrshift_distinct %in% prot_distrshift))]
+
+
+visFit(leduc_case_gamdid, feature = gamdid_only[4])

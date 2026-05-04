@@ -1,0 +1,37 @@
+library("here")
+source(here("R", "packages.R"))
+source(here("R", "utils.R"))
+
+leduc_case_gamdid <- readRDS(here("caseStudy_results", "leduc_case_gamdid"))
+names_spikein <- readRDS(here("caseStudy_results", "names_spikein"))
+
+f <- "Q16666"
+
+xmin <- min(assay(leduc_case_gamdid)[f, ], na.rm = T)
+xmax <- max(assay(leduc_case_gamdid)[f, ], na.rm = T)
+
+visFit(leduc_case_gamdid, feature = f, plot = "diff") -> p
+
+assay(leduc_case_gamdid)[f, which(colnames(leduc_case_gamdid) %in% names_spikein)] %>%
+  as.data.frame() %>%
+  ggplot(aes(x = ., y = 0)) + geom_boxplot(size = 0.5) + geom_jitter(size = 0.5) + theme_minimal() +
+  theme(axis.title.x = element_text(size = 10), axis.title.y = element_blank(),
+        axis.text.y = element_blank(), axis.ticks.y = element_blank(),
+        axis.ticks.x = element_blank(), axis.text.x = element_blank(),
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+  xlim(xmin,xmax) -> plot_spikein
+
+p$groupX_VS_groupY +
+  xlim(xmin, xmax) +
+  theme_paper() + theme(title = element_blank(), axis.title.y = element_blank(),
+                        strip.text = element_text(size = base_size, color = "black", face = "plain"),
+                        strip.placement = "outside") -> caseStudy_ex
+
+aligned <- cowplot::align_plots(caseStudy_ex, plot_spikein, align = "v", axis = "l")
+plot_grid(plotlist = aligned, ncol = 1, rel_heights = c(10,1)) -> fig27
+
+ggsave(filename = here::here("figures", "output", "jpg", "fig27.jpg"), plot = fig27,
+       width = FIG_WIDTH, height = FIG_HEIGHT_DOUBLE,
+       dpi = FIG_DPI)
+ggsave(filename = here::here("figures", "output", "pdf", "fig27.pdf"), plot = fig27,
+       width = FIG_WIDTH, height = FIG_HEIGHT_DOUBLE)

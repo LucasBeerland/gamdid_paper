@@ -1,0 +1,85 @@
+---
+title: 'Tutorial'
+author: "Lucas Beerland"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 3
+    theme: simplex
+    highlight: tango
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(mgcv)
+library(scp)
+library(scpdata)
+library(SingleCellExperiment)
+library(distinct)
+library(RecordTest)
+library(msqrob2)
+library(poolr)
+library(coin)
+library(stageR)
+
+source("functions/createCounts_function.R")
+source("functions/equalShapeGAM_function.R")
+source("functions/visFit_function.R")
+source("functions/omnibus_function.R")
+source("functions/topFeaturesOmnibus_function.R")
+```
+
+# Load in the dataset
+```{r}
+leduc <- scpdata::leduc2022_pSCoPE()
+```
+
+# Perform GAM, msqrob2 & omnibus analysis
+Outputs the p-values for the msqrob2 analysis (pval_location), the GAM analysis after centering (pval_shape) and the combined p-value (pval)
+
+## Two group setting
+```{r}
+# Wald test
+pOmni_Wald <- omnibusTest(sce = getWithColData(leduc, "peptides_log")[1:50,], 
+                          covariate = "SampleType", filterNA = 0.5)
+
+# LRT test
+pOmni_LRT <- omnibusTest(sce = getWithColData(leduc, "peptides_log")[1:50,], 
+                         covariate = "SampleType", filterNA = 0.5, test = "LRT")
+```
+
+## Three group setting
+```{r}
+leduc_threeway <- getWithColData(leduc, "peptides_log")[1:50,]
+leduc_threeway$SampleType <- sample(rep(c("X","Y","Z"), length.out = ncol(leduc_threeway)))
+# Wald test
+pOmni_threeway_Wald <- omnibusTest(sce = leduc_threeway, 
+                                   covariate = "SampleType", filterNA = 0.5)
+## stagewise testing
+pOmni_threeway_Wald_stageR <- stageR(pScreen = pOmni_threeway_Wald[,"aggregated_omnibus"], pConfirmation = pOmni_threeway_Wald[, -c(1:3)])
+pOmni_threeway_Wald_stageR <- stageWiseAdjustment(pOmni_threeway_Wald_stageR, method = "holm", alpha = 0.05)
+pOmni_threeway_Wald_adj <- getAdjustedPValues(pOmni_threeway_Wald_stageR, onlySignificantGenes = F, order = F)
+
+
+# LRT test
+pOmni_threeway_LRT <- omnibusTest(sce = leduc_threeway,
+                                  covariate = "SampleType", filterNA = 0.5, test = "LRT")
+## stagewise testing
+pOmni_threeway_LRT_stageR <- stageR(pScreen = pOmni_threeway_LRT[,"aggregated_omnibus"], pConfirmation = pOmni_threeway_LRT[, -c(1:3)])
+pOmni_threeway_LRT_stageR <- stageWiseAdjustment(pOmni_threeway_LRT_stageR, method = "holm", alpha = 0.05)
+pOmni_threeway_LRT_adj <- getAdjustedPValues(pOmni_threeway_LRT_stageR, onlySignificantGenes = F, order = F)
+```
+
+
+# Visualise the fit
+Outputs a plot of the histogram/ecdf with pvalues of the GAM, distinct and kolmogorov smirnov methods, function has the same optional arguments as the omnibusTest function
+```{r}
+visFit(sce = getWithColData(leduc, "peptides_medsweep"), feature = 1, covariate = "SampleType", plot = "hist")
+visFit(sce = getWithColData(leduc, "peptides_medsweep"), feature = 1, covariate = "SampleType", plot = "ecdf")
+```
+
+

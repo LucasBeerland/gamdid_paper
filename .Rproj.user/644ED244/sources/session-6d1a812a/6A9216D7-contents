@@ -1,0 +1,20 @@
+library("here")
+source(here("R", "packages.R"))
+source(here("R", "utils.R"))
+
+leduc_case_gamdid <- readRDS(here("caseStudy_results", "leduc_case_gamdid"))
+
+f <- "O00483"
+
+visFit(leduc_case_gamdid, feature = f, plot = "diff") -> p
+
+p$groupX_VS_groupY +
+  theme_paper() + theme(title = element_blank(), axis.title.y = element_blank(),
+                        strip.text = element_text(size = base_size, color = "black", face = "plain"),
+                        strip.placement = "outside") -> fig29
+
+ggsave(filename = here::here("figures", "output", "jpg", "fig29.jpg"), plot = fig29,
+       width = FIG_WIDTH, height = FIG_HEIGHT_DOUBLE,
+       dpi = FIG_DPI)
+ggsave(filename = here::here("figures", "output", "pdf", "fig29.pdf"), plot = fig29,
+       width = FIG_WIDTH, height = FIG_HEIGHT_DOUBLE)

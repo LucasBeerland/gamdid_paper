@@ -1,0 +1,400 @@
+---
+title: 'Create informative figures'
+author: "Lucas Beerland"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 3
+    theme: simplex
+    highlight: tango
+    number_sections: true
+---
+
+```{r}
+library(tidyverse)
+library(scpdata)
+library(ggsci)
+library(msqrob2)
+library(mgcv)
+library(FamilyRank)
+library(ggpubr)
+library(diptest)
+# source all the functions
+for (f in paste0("./functions/",list.files("./functions")) ){source(f)}
+for (f in paste0("./functions_package/",list.files("./functions_package")) ){source(f)}
+```
+
+```{r}
+# also this data set: scpdata::petrosius2023_mES()
+#leduc <- leduc2022_pSCoPE()
+
+load(file = "leduc_processed.Rda")
+load(file = "leduc_notFiltered.Rda")
+leduc_bad <- leduc2022_pSCoPE()
+leduc <- QFeatures::aggregateFeatures(leduc,
+                         i = "peptides_log",
+                         name = "proteins",
+                         fcol = "Leading.razor.protein.id",
+                         fun = MsCoreUtils::medianPolish, na.rm = TRUE)
+
+leduc_notFiltered <- QFeatures::aggregateFeatures(leduc_notFiltered,
+                         i = "peptides_log",
+                         name = "proteins",
+                         fcol = "Leading.razor.protein.id",
+                         fun = MsCoreUtils::medianPolish, na.rm = TRUE)
+
+petro <- readRDS("petrosius.rds")
+# petro <- QFeatures::aggregateFeatures(petro,
+#                          name = "proteins",
+#                          fcol = "protein",
+#                          fun = matrixStats::colMedians, na.rm = TRUE)
+```
+
+```{r}
+
+proteins_processed <- as.data.frame(t(assay(leduc[["proteins"]])))
+proteins_processed$SampleType <- leduc[["proteins"]]$SampleType
+
+
+# Msqrob analysis
+protproc_filtered <- getWithColData(leduc, "proteins")["Q6RW13",]
+protproc_filtered2 <- getWithColData(leduc, "proteins")["P46020",]
+protproc_filtered <-msqrob(protproc_filtered, formula = ~ SampleType)
+protproc_filtered2 <-msqrob(protproc_filtered2, formula = ~ SampleType)
+coef <- names(getCoef(rowData(protproc_filtered)$msqrobModels[[1]]))[2]
+L <- makeContrast(paste0(coef,"=0"), parameterNames = coef)
+protproc_filtered <- hypothesisTest(object = protproc_filtered, contrast = L)
+protproc_filtered2 <- hypothesisTest(object = protproc_filtered2, contrast = L)
+pval_msqrob <- rowData(protproc_filtered)[[coef]]$pval
+pval_msqrob2 <- rowData(protproc_filtered2)[[coef]]$pval
+names(pval_msqrob) <- rownames(protproc_filtered)
+names(pval_msqrob2) <- rownames(protproc_filtered2)
+pval_msqrob["Q6RW13"]
+pval_msqrob2["P46020"]
+
+# distribution analysis
+pval_shape <- equalShapeGAM(protproc_filtered, "SampleType", method = "REML")
+pval_shape2 <- equalShapeGAM(protproc_filtered2, "SampleType", method = "REML")
+
+# omnibus test
+p <- omnibusTest(sce = getWithColData(leduc, "proteins_processed"), covariate = "SampleType", method = "REML", test = "Wald")
+
+alpha <- 0.05
+m <- length(p)
+p_sorted <- sort(p)
+thresholds <- (1:m) / m * alpha
+k <- max(which(p_sorted <= thresholds))
+adj_alpha <- thresholds[k]
+
+# Q6RW13
+proteins_processed %>%
+  ggplot(aes(x = Q6RW13, fill = SampleType, colour = SampleType)) +
+  #geom_histogram(alpha = 0.3, position = "identity") +
+  geom_density(alpha = 0.3) + scale_colour_npg() + scale_fill_npg() +
+  labs(subtitle = expression(atop("p"["location"]*" = 0.773", "p"["distribution"]*" <<< 1e-5"))) +
+  theme_bw() +
+  theme(plot.subtitle = element_text(size = 13, hjust = 0.5)) +
+  theme(legend.text = element_text(size = 8), 
+        legend.title = element_text(size = 9), 
+        legend.key.size = unit(0.5, "cm")) -> plot_ex1
+
+# P46020
+proteins_processed %>%
+  ggplot(aes(x = P46020, fill = SampleType, colour = SampleType)) +
+  #geom_histogram(alpha = 0.3, position = "identity") +
+  geom_density(alpha = 0.3) + scale_colour_npg() + scale_fill_npg() +
+  labs(subtitle = expression(atop("p"["location"]*" << 1e-5", "p"["distribution"]*" <<< 1e-5"))) +
+  theme_bw() +
+  theme(plot.subtitle = element_text(size = 13, hjust = 0.5)) +
+  theme(legend.text = element_text(size = 8), 
+        legend.title = element_text(size = 9), 
+        legend.key.size = unit(0.5, "cm")) -> plot_ex2
+ggarrange(plot_ex1, plot_ex2, ncol = 1, common.legend = T, legend = "right") -> plot_exs
+ggsave("figures/plot_exs.png", plot = plot_exs, width = 6,height = 8)
+
+# Q9HCR9
+proteins_processed %>%
+  ggplot(aes(x = Q9HCR9, fill = SampleType, colour = SampleType)) +
+  #geom_histogram(alpha = 0.3, position = "identity") +
+  geom_density(alpha = 0.3) + scale_colour_npg() + scale_fill_npg() +
+  theme_minimal() +
+  ggtitle("Q9HCR9 protein in the leduc dataset") +
+  theme(plot.subtitle = element_text(size = 13, hjust = 0.5)) +
+  theme(legend.text = element_text(size = 8), 
+        legend.title = element_text(size = 9), 
+        legend.key.size = unit(0.5, "cm"),
+        plot.title = element_text(size = 15, face = "bold", hjust = 0.5),
+        panel.grid = element_blank()) -> plot_ex
+
+minP <- floor(min(proteins_processed %>% pull(Q9HCR9), na.rm = T)*10)/10
+maxP <- ceiling(max(proteins_processed %>% pull(Q9HCR9), na.rm = T)*10)/10
+bw <- (maxP - minP) / 25
+breaks <- seq(minP, maxP, bw)
+tick_positions <- breaks - bw/2
+proteins_processed %>%
+  ggplot(aes(x = Q9HCR9, fill = SampleType, colour = SampleType)) +
+  geom_histogram(alpha = 0.3, position = "identity", colour = "black", breaks = breaks) + scale_colour_npg() + scale_fill_npg() +
+  theme_minimal() +
+  ggtitle("Q9HCR9 protein in the leduc dataset") +
+  theme(plot.subtitle = element_text(size = 13, hjust = 0.5)) +
+  theme(legend.text = element_text(size = 8), 
+        legend.title = element_text(size = 9), 
+        legend.key.size = unit(0.5, "cm"),
+        plot.title = element_text(size = 15, face = "bold", hjust = 0.5),
+        panel.grid = element_blank()) -> histplot_ex
+visFit(sce = getWithColData(leduc, "proteins_processed"), feature = "Q9HCR9", covariate = "SampleType", shade = F) +
+  ggtitle("Q9HCR9 protein in the leduc dataset") +
+  theme_minimal() + theme(panel.grid = element_blank(), 
+                          plot.title = element_text(size = 15, face = "bold", hjust = 0.5)) -> fitplot_ex
+visFit(sce = getWithColData(leduc, "proteins_processed"), feature = "Q9HCR9", covariate = "SampleType", plot = "hist", adj_alpha = adj_alpha, shade = F) +
+  theme_minimal() + theme(panel.grid = element_blank(), legend.position = "none", axis.title.x = element_blank(), axis.text.x  = element_blank(),
+                          axis.ticks.x = element_blank(), axis.line.x  = element_blank(), axis.title.y = element_blank(), axis.text.y  = element_blank(),
+                          axis.ticks.y = element_blank(), axis.line.y  = element_blank()) + xlim(-1,1.5) -> fitplotnoshade_ex
+visFit(sce = getWithColData(leduc, "proteins_processed"), feature = "Q9HCR9", covariate = "SampleType", plot = "hist", adj_alpha = adj_alpha) +
+  theme_minimal() + theme(panel.grid = element_blank(), legend.position = "none", axis.title.x = element_blank(), axis.text.x  = element_blank(),
+                          axis.ticks.x = element_blank(), axis.line.x  = element_blank(), axis.title.y = element_blank(), axis.text.y  = element_blank(),
+                          axis.ticks.y = element_blank(), axis.line.y  = element_blank()) + xlim(-1,1.5) -> fitplotshade_ex
+
+visFit(sce = getWithColData(leduc, "proteins_processed"), feature = "Q9HCR9", covariate = "SampleType", plot = "diff", adj_alpha = adj_alpha, shade = F) +
+  theme_minimal() + theme(panel.grid = element_blank(), axis.title.y = element_blank(), axis.text.y  = element_blank(),
+                          axis.ticks.y = element_blank(), axis.line.y  = element_blank()) + xlim(-1,1.5)  -> diffplotnoshade_ex
+visFit(sce = getWithColData(leduc, "proteins_processed"), feature = "Q9HCR9", covariate = "SampleType", plot = "diff", adj_alpha = adj_alpha) +
+  theme_minimal() + theme(panel.grid = element_blank(), axis.title.y = element_blank(), axis.text.y  = element_blank(),
+                          axis.ticks.y = element_blank(), axis.line.y  = element_blank()) + xlim(-1,1.5)  -> diffplotshade_ex
+
+ggsave("figures/plot_ex.png", plot = plot_ex, width = 10,height = 7)
+ggsave("figures/histplot_ex.png", plot = histplot_ex, width = 10,height = 7)
+ggsave("figures/fitplot_ex.png", plot = fitplot_ex, width = 10,height = 7)
+ggsave("figures/fitplotnoshade_ex.png", plot = fitplotnoshade_ex, width = 11, height = 3)
+ggsave("figures/fitplotshade_ex.png", plot = fitplotshade_ex, width = 11,height = 3)
+ggsave("figures/diffplotnoshade_ex.png", plot = diffplotnoshade_ex, width = 11,height = 3)
+ggsave("figures/diffplotshade_ex.png", plot = diffplotshade_ex, width = 11,height = 3)
+
+
+
+visFit(sce = getWithColData(leduc, "proteins_processed"), feature = "Q6RW13", covariate = "SampleType") + 
+  labs(subtitle = paste0("pMsqrob = ", as.character(pval_msqrob["Q6RW13"]), ", pGAM << 1e-5")) +
+  theme_bw()
+visFit(sce = getWithColData(leduc, "proteins_processed"), feature = "P46020", covariate = "SampleType") +
+  labs(subtitle = "pMsqrob << 1e-5, pGAM << 1e-5") +
+  theme_bw() -> explot
+
+
+
+protproc_filtered_test <- getWithColData(leduc, "proteins")
+protproc_filtered_test <- msqrob(protproc_filtered_test, formula = ~ SampleType)
+coef <- names(getCoef(rowData(protproc_filtered_test)$msqrobModels[[1]]))[2]
+L <- makeContrast(paste0(coef,"=0"), parameterNames = coef)
+protproc_filtered_test <- hypothesisTest(object = protproc_filtered_test, contrast = L)
+rowData(protproc_filtered_test)[testprot, "SampleTypeMonocyte"]
+
+
+leduc_dd <- compDistr(sce = getWithColData(leduc_notFiltered, "proteins"), covariate = "SampleType", nuisance = ~lcbatch, filterNA = 0.9) # nog keer met mixed modelcorrectie proberen?
+
+leduc_de <-msqrob(getWithColData(leduc_notFiltered, "proteins"), formula = ~ SampleType + lcbatch)
+coef <- names(getCoef(rowData(leduc_de)$msqrobModels[[1]]))[2]
+L <- makeContrast(paste0(coef,"=0"), parameterNames = coef)
+leduc_de <- hypothesisTest(object = leduc_de, contrast = L)
+pval_msqrob <- rowData(leduc_de)[[coef]]$pval
+rowData(leduc_de)["Q6P5W5","SampleTypeMonocyte"]
+
+
+#leduc_dd <- compDistr(sce = petro, covariate = "SampleType")
+
+proteins_processed2 <- as.data.frame(t(assay(leduc_dd)))
+proteins_processed2$SampleType <- leduc_dd$SampleType
+
+
+sapply(proteins_processed2 %>% filter(SampleType == "Melanoma") %>% select(-SampleType), FUN = function(x) dip.test(x)$p.value) -> p_mm_mono
+sort(p_mm_mono, decreasing = F)[1:100] -> bimod_prot
+names_bimod_prot <- names(bimod_prot)[which(rowData(protproc_filtered_test)[names(bimod_prot), coef]$adjPval > 0.05)]
+
+mean_proteins <- as.matrix(proteins_processed2 %>% group_by(SampleType) %>% dplyr::summarise_all(function(x) mean(x,na.rm = T)) %>% select(-"SampleType"))
+sd_proteins <- as.matrix(proteins_processed2 %>% group_by(SampleType) %>% dplyr::summarise_all(function(x) sd(x,na.rm = T)) %>% select(-"SampleType"))
+prot_summary <- data.frame(cbind(sd_diff = abs(sd_proteins[2,] - sd_proteins[1,]),
+                      mean_diff = abs(mean_proteins[2,] - mean_proteins[1,])))
+POI <- rownames(prot_summary %>% arrange(sd_diff) %>% head(100) %>% arrange(-mean_diff))
+
+
+visFit(sce = leduc_dd, feature = POI[4])
+
+# meanshift:
+visFit(sce = leduc_dd, feature = "Q8TCT9") # DE interessant na correctie voor lcbatch met pNA = 0.8
+
+# bimodaliteit:
+visFit(sce = leduc_dd, feature = "Q9NX24") # DM interessant na correctie voor lcbatch met pNA = 0.8
+visFit(sce = leduc_dd, feature = "Q9H2V7") # DM, interessant na correctie voor lcbatch met pNA = 0.8
+
+#variantie
+visFit(sce = leduc_dd, feature = "Q6P5W5") # DV, interessant na correctie voor lcbatch met pNA = 0.8
+visFit(sce = leduc_dd, feature = "Q8TBF8") # DV, interessant na correctie voor lcbatch met pNA = 0.8
+visFit(sce = leduc_dd, feature = "O00743") # DV, interessant na correctie voor lcbatch met pNA = 0.8
+
+# subpopulatie
+visFit(sce = leduc_dd, feature = "Q00341")
+
+
+proteins_processed2 %>%
+  ggplot(aes(x = Q9NX24, fill = SampleType, colour = SampleType)) +
+  #geom_histogram(alpha = 0.3, position = "identity") +
+  geom_density(alpha = 0.3) + scale_colour_npg() + scale_fill_npg() +
+  theme_minimal() +
+  ggtitle("protein in the leduc dataset") +
+  theme(plot.subtitle = element_text(size = 13, hjust = 0.5)) +
+  theme(legend.text = element_text(size = 8), 
+        legend.title = element_text(size = 9), 
+        legend.key.size = unit(0.5, "cm"),
+        plot.title = element_text(size = 15, face = "bold", hjust = 0.5),
+        panel.grid = element_blank())
+
+
+
+# Q8TCT9
+proteins_processed2 %>%
+  ggplot(aes(x = Q8TCT9, fill = SampleType, colour = SampleType)) +
+  geom_density(alpha = 0.3) + scale_colour_npg() + scale_fill_npg() +
+  theme_bw() +
+  theme(legend.text = element_text(size = 8), 
+        legend.title = element_text(size = 9), 
+        legend.key.size = unit(0.5, "cm")) -> plot_ex1
+
+# Q9NX24
+proteins_processed2 %>%
+  ggplot(aes(x = Q9NX24, fill = SampleType, colour = SampleType)) +
+  geom_density(alpha = 0.3) + scale_colour_npg() + scale_fill_npg() +
+  theme_bw() +
+  theme(legend.text = element_text(size = 8), 
+        legend.title = element_text(size = 9), 
+        legend.key.size = unit(0.5, "cm")) -> plot_ex2
+
+# Q00341
+proteins_processed2 %>%
+  ggplot(aes(x = Q00341, fill = SampleType, colour = SampleType)) +
+  geom_density(alpha = 0.3) + scale_colour_npg() + scale_fill_npg() +
+  theme_bw() +
+  theme(legend.text = element_text(size = 8), 
+        legend.title = element_text(size = 9), 
+        legend.key.size = unit(0.5, "cm")) -> plot_ex3
+
+
+ggarrange(plot_ex1, plot_ex2, plot_ex3, ncol = 1, common.legend = T, legend = "right") -> plot_exs
+ggsave("figures/jpg/plot_exs.jpeg", plot = plot_exs, width = 6,height = 8)
+
+
+
+
+de_notSign <- rownames(rowData(leduc_de)[,"SampleTypeMonocyte"] %>% filter(adjPval > 0.05))
+dd_sign <- rownames(as.data.frame(rowData(leduc_dd)) %>% filter(pval < 0.05))
+visFit(leduc_dd, dd_sign[dd_sign %in% de_notSign][5])
+```
+
+```{r}
+
+minP <- floor(min(proteins_processed2 %>% pull(Q00341), na.rm = T)*10)/10
+maxP <- ceiling(max(proteins_processed2 %>% pull(Q00341), na.rm = T)*10)/10
+bw <- (maxP - minP) / 25
+breaks <- seq(minP, maxP, bw)
+tick_positions <- breaks - bw/2
+# bw <- proteins_processed %>% #filter(SampleType == "Melanoma") %>% 
+#   select(P46020) %>% summarise(bw = ( max(P46020) - min(P46020) )/24) %>% 
+#   pull(bw)
+# tick_positions <- seq(min(proteins_processed$P46020), max(proteins_processed$P46020), by = bw) #- bw / 2
+#tick_positions <- c(tick_positions, max(tick_positions) + bw)
+#tick_positions <- c(tick_positions, max(proteins_processed$P46020))
+labeled_positions <- tick_positions[seq(1, length(tick_positions), by = 4)]
+proteins_processed2 %>% #filter(SampleType == "Melanoma") %>%
+  ggplot(aes(x = Q00341)) +
+  geom_histogram(aes(fill = SampleType), colour = "black", breaks = breaks, position = "identity", alpha = 0.4) +
+  ggtitle("Discretization for density estimation") +
+  labs(x = expression(mid[ck]), y = expression(s[ck])) +
+  scale_x_continuous(breaks = tick_positions, labels = ifelse(tick_positions %in% labeled_positions, round(tick_positions,2), "")) +
+  scale_fill_manual(values = c("salmon", "skyblue")) +
+  theme_bw() +
+  theme(panel.grid = element_blank()) +
+  theme(plot.title = element_text(size = 15, face = "bold", hjust = 0.5),
+        axis.title = element_text(size = 12)) +
+  theme(legend.text = element_text(size = 8), legend.title = element_text(size = 9), legend.key.size = unit(0.5, "cm")) -> plot_discr
+ggsave("figures/jpg/discrplot.jpeg", plot = plot_discr, width = 6,height = 4)
+
+visFit(leduc_dd, feature = "Q00341", shade = F) -> p
+p + theme_bw() + theme(panel.grid = element_blank()) +
+  ggtitle("GAM fit for distributions") +
+  labs(x = expression(mid[ck]), y = expression(s[ck])) +
+  scale_x_continuous(breaks = tick_positions, labels = ifelse(tick_positions %in% labeled_positions, round(tick_positions,2), "")) +
+  theme(plot.title = element_text(size = 15, face = "bold", hjust = 0.5),
+        axis.title = element_text(size = 12)) +
+  labs(colour = "SampleType") +
+  theme(legend.text = element_text(size = 8), legend.title = element_text(size = 9), legend.key.size = unit(0.5, "cm")) -> densplot
+ggsave("figures/jpg/densplot.jpeg", plot = densplot, width = 6,height = 4)
+
+visFit(sce = leduc_dd, feature = "Q00341", plot = "hist")
+visFit(sce = leduc_dd, feature = "Q00341") -> p_shade
+visFit(sce = leduc_dd, feature = "Q00341", plot = "diff") + theme(
+   axis.text.x = element_blank(),   # remove x-axis tick labels
+   axis.title.x = element_blank(),  # ensure x-axis title is gone
+   panel.grid.major = element_blank(),  # remove major gridlines
+   panel.grid.minor = element_blank()   # remove minor gridlines
+  ) -> p_diff
+
+p_shade + theme_bw() + theme(panel.grid = element_blank()) +
+  labs(x = expression(mid[ck]), y = expression(s[ck])) +
+  scale_x_continuous(breaks = tick_positions, labels = ifelse(tick_positions %in% labeled_positions, round(tick_positions,2), "")) +
+  labs(colour = "SampleType") +
+  theme(legend.text = element_text(size = 8), legend.title = element_text(size = 9), legend.key.size = unit(0.5, "cm")) +
+  theme(legend.position = "none")  -> densplot_shade
+
+ggarrange(p_diff, densplot_shade, ncol = 1) +
+  ggtitle("Detecting differential regions")  +
+  theme(plot.title = element_text(size = 15, face = "bold", hjust = 0.5),
+        axis.title = element_text(size = 12)) -> plot_diffregions
+
+ggsave("figures/jpg/plot_diffregions.jpeg", plot = plot_diffregions, width = 6,height = 8)
+```
+
+# soorten simulaties
+```{r}
+# DE
+A_DE <- data.frame(val= rnorm(100000), cov = "A", disdiff = "DE")
+B_DE <- data.frame(val= rnorm(1000000,1), cov = "B", disdiff = "DE")
+
+# DV
+A_DV <- data.frame(val= rnorm(100000), cov = "A", disdiff = "DV")
+B_DV <- data.frame(val= rnorm(100000,sd = 2), cov = "B", disdiff = "DV")
+
+# DB
+A_DB <- data.frame(val= rnorm(100000), cov = "A", disdiff = "DB")
+B_DB <- data.frame(val= rbinorm(100000,mean1 = -2, mean2 = 2, sd1=1, sd2=1,prop = 0.5), cov = "B", disdiff = "DB")
+
+# DM
+A_DM <- data.frame(val= rnorm(100000), cov = "A", disdiff = "DM")
+B_DM <- data.frame(val= rbinorm(100000,mean1 = 0, mean2 = 4, sd1=1, sd2=1,prop = 0.4), cov = "B", disdiff = "DM")
+
+# DP
+A_DP <- data.frame(val= rbinorm(100000,mean1 = 0, mean2 = 4, sd1=1, sd2=1,prop = 0.6), cov = "A", disdiff = "DP")
+B_DP <- data.frame(val= rbinorm(100000,mean1 = 0, mean2 = 4, sd1=1, sd2=1,prop = 0.4), cov = "B", disdiff = "DP")
+
+
+simdat <- rbind(A_DE,B_DE, A_DV, B_DV, A_DB, B_DB, A_DM, B_DM, A_DP, B_DP)
+simdat$disdiff <- factor(simdat$disdiff, levels = c("DE", "DV", "DB", "DM", "DP"),ordered = T)
+
+ggplot(simdat) +
+  geom_density(aes(x=val,fill=cov,colour = cov), alpha = 0.3) +
+  facet_wrap(~disdiff, scales = "free", ncol = 1) +
+  theme_bw() +
+  theme(legend.position="none", 
+        axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank(),
+        axis.title.y=element_blank(),
+        axis.text.y=element_blank(),
+        axis.ticks.y=element_blank(), 
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank()) -> diffsimplot
+
+ggsave("figures/diffsim.png", plot = diffsimplot, width = 3,height = 7)
+getwd()
+```
+
+
