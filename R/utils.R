@@ -82,7 +82,7 @@ makeFdpCurve <- function(sce_mock, id_groups, plot = TRUE, title = "Comparing me
   # pOmni <- omnibusTest(sce = sce_sign, covariate = covariate, sp = sp, batch = batch,
   #                      id = id, binwidth = binwidth, bins = bins, roundof = roundof,
   #                      method = method, test = test)
-  sce_dd <- gamdid:::compDistrSCE(sce = sce_sign, covariate = covariate, adjust = F,  minObs = minObs)
+  sce_dd <- gamdid:::compDistrSCE(sce = sce_sign, covariate = covariate, adjust = "none",  minObs = minObs)
 
   if (compare){
     ## Distinct
