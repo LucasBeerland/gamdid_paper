@@ -2,19 +2,19 @@ library("here")
 source(here("R", "packages.R"))
 source(here("R", "utils.R"))
 
-leduc_DE <- readRDS(here("simulation_results", "leduc_DE_0.4"))
-leduc_DV <- readRDS(here("simulation_results", "leduc_DV_1.2"))
-leduc_DB <- readRDS(here("simulation_results", "leduc_DB_0.9"))
-leduc_DM <- readRDS(here("simulation_results", "leduc_DM_0.9"))
-leduc_DP <- readRDS(here("simulation_results", "leduc_DP_1"))
+petro_DE <- readRDS(here("simulation_results", "petro_DE_0.4"))
+petro_DV <- readRDS(here("simulation_results", "petro_DV_1.2"))
+petro_DB <- readRDS(here("simulation_results", "petro_DB_0.9"))
+petro_DM <- readRDS(here("simulation_results", "petro_DM_0.9"))
+petro_DP <- readRDS(here("simulation_results", "petro_DP_1"))
 
-leduc_DE$fdp$distrShift <- "DE"
-leduc_DV$fdp$distrShift <- "DV"
-leduc_DB$fdp$distrShift <- "DB"
-leduc_DM$fdp$distrShift <- "DM"
-leduc_DP$fdp$distrShift <- "DP"
+petro_DE$fdp$distrShift <- "DE"
+petro_DV$fdp$distrShift <- "DV"
+petro_DB$fdp$distrShift <- "DB"
+petro_DM$fdp$distrShift <- "DM"
+petro_DP$fdp$distrShift <- "DP"
 
-rbind(leduc_DE$fdp, leduc_DV$fdp, leduc_DB$fdp, leduc_DM$fdp, leduc_DP$fdp) %>%
+rbind(petro_DE$fdp, petro_DV$fdp, petro_DB$fdp, petro_DM$fdp, petro_DP$fdp) %>%
   filter(Method %in% c("Aggregated", "Distinct")) %>%
   mutate(distrShift = factor(distrShift, levels = c("DE","DV","DB","DM","DP"), ordered = T),,
          Method = ifelse(Method == "Aggregated", "gamdid", Method),

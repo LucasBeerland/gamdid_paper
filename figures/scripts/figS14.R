@@ -2,7 +2,7 @@ library("here")
 source(here("R", "packages.R"))
 source(here("R", "utils.R"))
 
-f <- "P62258"
+f <- "O43852"
 leduc_case_gamdid <- readRDS(here("caseStudy_results", "leduc_case_gamdid"))
 leduc_case_mock_gamdid <- readRDS(here("caseStudy_results", "leduc_case_mock_gamdid"))
 names_spikein <- readRDS(here("caseStudy_results", "names_spikein"))

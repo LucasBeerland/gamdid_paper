@@ -39,6 +39,3 @@ ggsave(filename = here::here("figures", "output", "jpg", "figS12.jpg"), plot = f
        dpi = FIG_DPI)
 ggsave(filename = here::here("figures", "output", "pdf", "figS12.pdf"), plot = figS12,
        width = FIG_WIDTH, height = FIG_HEIGHT_DOUBLE)
-
-
-rowData(leduc_case_gamdid)["P63241",]

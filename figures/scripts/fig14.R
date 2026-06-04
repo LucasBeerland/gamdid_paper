@@ -2,37 +2,17 @@ library("here")
 source(here("R", "packages.R"))
 source(here("R", "utils.R"))
 
-leduc_case_gamdid <- readRDS(here("caseStudy_results", "leduc_case_gamdid"))
-leduc_case_mock_gamdid <- readRDS(here("caseStudy_results", "leduc_case_mock_gamdid"))
-names_spikein <- readRDS(here("caseStudy_results", "names_spikein"))
+petro_DE <- readRDS(here("simulation_results", "petro_DE_0.4"))
 
-f <- "P63241"
+ggplot(data.frame(x=assay(petro_DE$sce_dd)["Q9D8E6",], covariate = colData(petro_DE$sce_dd)[["SampleType"]])) +
+  stat_ecdf(aes(x=x, colour = covariate)) +
+  theme_paper() + scale_color_paper() -> DE_distinct
 
-xmin <- min(assay(leduc_case_gamdid)[f, ], na.rm = T)
-xmax <- max(assay(leduc_case_gamdid)[f, ], na.rm = T)
+visFit(petro_DE$sce_dd, feature = "Q9D8E6", plot = "hist")$SampleTypeA_VS_SampleTypeB +
+  theme_paper() + theme(plot.title = element_blank()) + scale_color_paper() + scale_fill_paper() -> DE_gamdid
 
-visFit(leduc_case_mock_gamdid, feature = f)$groupX_VS_groupY +
-  theme_paper() + scale_fill_paper() +
-  theme(plot.title = element_blank(),
-        axis.title.x = element_blank()) +
-  xlim(xmin, xmax) -> ex_caseStudy_mock
-visFit(leduc_case_gamdid, feature = f)$groupX_VS_groupY +
-  theme_paper() + scale_fill_paper() +
-  theme(plot.title = element_blank(),
-        axis.title.x = element_blank()) +
-  xlim(xmin, xmax) -> ex_caseStudy
-
-assay(leduc_case_gamdid)[f, which(colnames(leduc_case_gamdid) %in% names_spikein)] %>%
-  as.data.frame() %>%
-  ggplot(aes(x = ., y = 0)) + geom_boxplot(size = 0.5) + geom_jitter(size = 0.5)+ theme_minimal() +
-  theme(axis.title.x = element_text(size = 10), axis.title.y = element_blank(),
-        axis.text.y = element_blank(), axis.ticks.y = element_blank(),
-        axis.ticks.x = element_blank(), axis.text.x = element_blank(),
-        panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
-  xlim(xmin,xmax) -> plot_spikein
-
-ggarrange(ex_caseStudy_mock, ex_caseStudy, plot_spikein,
-          ncol = 1, common.legend = T,  heights = c(1, 1, 0.25), align = "v") -> fig14
+ggarrange(DE_distinct, DE_gamdid,
+          common.legend = T, ncol = 1, legend = "top") -> fig14
 
 ggsave(filename = here::here("figures", "output", "jpg", "fig14.jpg"), plot = fig14,
        width = FIG_WIDTH, height = FIG_HEIGHT_DOUBLE,

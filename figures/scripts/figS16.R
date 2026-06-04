@@ -2,7 +2,7 @@ library("here")
 source(here("R", "packages.R"))
 source(here("R", "utils.R"))
 
-f <- "O00483"
+f <- "P06703"
 leduc_case_gamdid <- readRDS(here("caseStudy_results", "leduc_case_gamdid"))
 leduc_case_mock_gamdid <- readRDS(here("caseStudy_results", "leduc_case_mock_gamdid"))
 names_spikein <- readRDS(here("caseStudy_results", "names_spikein"))
@@ -31,7 +31,7 @@ assay(leduc_case_gamdid)[f, which(colnames(leduc_case_gamdid) %in% names_spikein
   xlim(xmin,xmax) -> plot_spikein
 
 ggarrange(ex_caseStudy_mock, ex_caseStudy, plot_spikein,
-          ncol = 1, common.legend = T,  heights = c(1, 1, 0.25), align = "v")-> figS16
+          ncol = 1, common.legend = T,  heights = c(1, 1, 0.25), align = "v") -> figS16
 
 ggsave(filename = here::here("figures", "output", "jpg", "figS16.jpg"), plot = figS16,
        width = FIG_WIDTH, height = FIG_HEIGHT_DOUBLE,

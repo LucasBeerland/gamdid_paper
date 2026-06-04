@@ -8,37 +8,25 @@ leduc_DB <- readRDS(here("simulation_results", "leduc_DB_0.9"))
 leduc_DM <- readRDS(here("simulation_results", "leduc_DM_0.9"))
 leduc_DP <- readRDS(here("simulation_results", "leduc_DP_1"))
 
+leduc_DE$fdp$distrShift <- "DE"
+leduc_DV$fdp$distrShift <- "DV"
+leduc_DB$fdp$distrShift <- "DB"
+leduc_DM$fdp$distrShift <- "DM"
+leduc_DP$fdp$distrShift <- "DP"
 
-plot_gamdid_DE_leduc <- plotFdp(leduc_DE$fdp, selection = c("Aggregated", "distinct"), name = "gamdid", title = "DE") +
-  theme_paper() +
-  theme(axis.title.x = element_blank(),
-        plot.title = element_text(size = base_size, face = "bold", hjust = 0.5)) +
-  scale_color_simulations()
-plot_gamdid_DV_leduc <- plotFdp(leduc_DV$fdp, selection = c("Aggregated", "distinct"), name = "gamdid", title = "DV") +
-  theme_paper() +
-  theme(axis.title.x = element_blank(),
-        plot.title = element_text(size = base_size, face = "bold", hjust = 0.5)) +
-  scale_color_simulations()
-plot_gamdid_DB_leduc <- plotFdp(leduc_DB$fdp, selection = c("Aggregated", "distinct"), name = "gamdid", title = "DB") +
-  theme_paper() +
-  theme(axis.title.x = element_blank(),
-        plot.title = element_text(size = base_size, face = "bold", hjust = 0.5)) +
-  scale_color_simulations()
-plot_gamdid_DM_leduc <- plotFdp(leduc_DM$fdp, selection = c("Aggregated", "distinct"), name = "gamdid", title = "DM") +
-  theme_paper() +
-  theme(axis.title.x = element_blank(),
-        plot.title = element_text(size = base_size, face = "bold", hjust = 0.5)) +
-  scale_color_simulations()
-plot_gamdid_DP_leduc <- plotFdp(leduc_DP$fdp, selection = c("Aggregated", "distinct"), name = "gamdid", title = "DP") +
-  theme_paper() +
-  theme(plot.title = element_text(size = base_size, face = "bold", hjust = 0.5)) +
-  scale_color_simulations()
-
-ggarrange(plot_gamdid_DE_leduc, plot_gamdid_DV_leduc, plot_gamdid_DB_leduc, plot_gamdid_DM_leduc, plot_gamdid_DP_leduc,
-          common.legend = T, ncol = 1, legend = "top", heights = c(1,1,1,1,1.3)) -> fig8
+rbind(leduc_DE$fdp, leduc_DV$fdp, leduc_DB$fdp, leduc_DM$fdp, leduc_DP$fdp) %>%
+  filter(Method %in% c("Aggregated", "Distinct")) %>%
+  mutate(distrShift = factor(distrShift, levels = c("DE","DV","DB","DM","DP"), ordered = T),,
+         Method = ifelse(Method == "Aggregated", "gamdid", Method),
+         Method = ifelse(Method == "Distinct", "distinct", Method)) %>%
+  filter(adjPval < 0.05 & tp) %>% summarize(n = n(), .by = c(distrShift, Method)) %>%
+  complete(distrShift, Method, fill = list(n = 0)) %>%
+  ggplot() +
+  geom_col(aes(x= distrShift, y = n, fill = Method), position = "dodge") +
+  theme_paper() + scale_fill_simulations() -> fig8
 
 ggsave(filename = here::here("figures", "output", "jpg", "fig8.jpg"), plot = fig8,
-       width = FIG_WIDTH, height = FIG_HEIGHT_TRIPLE,
+       width = FIG_WIDTH, height = FIG_HEIGHT,
        dpi = FIG_DPI)
 ggsave(filename = here::here("figures", "output", "pdf", "fig8.pdf"), plot = fig8,
-       width = FIG_WIDTH, height = FIG_HEIGHT_TRIPLE)
+       width = FIG_WIDTH, height = FIG_HEIGHT)

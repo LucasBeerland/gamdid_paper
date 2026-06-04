@@ -2,31 +2,43 @@ library("here")
 source(here("R", "packages.R"))
 source(here("R", "utils.R"))
 
-petro_DE <- readRDS(here("simulation_results", "petro_DE_0.4"))
-petro_DV <- readRDS(here("simulation_results", "petro_DV_1.2"))
-petro_DB <- readRDS(here("simulation_results", "petro_DB_0.9"))
-petro_DM <- readRDS(here("simulation_results", "petro_DM_0.9"))
-petro_DP <- readRDS(here("simulation_results", "petro_DP_1"))
+leduc_subsample_DE <- readRDS(here("simulation_results", "leduc_DE_0.4_subsample"))
+leduc_subsample_DV <- readRDS(here("simulation_results", "leduc_DV_1.2_subsample"))
+leduc_subsample_DB <- readRDS(here("simulation_results", "leduc_DB_0.9_subsample"))
+leduc_subsample_DM <- readRDS(here("simulation_results", "leduc_DM_0.9_subsample"))
+leduc_subsample_DP <- readRDS(here("simulation_results", "leduc_DP_1_subsample"))
 
-petro_DE$fdp$distrShift <- "DE"
-petro_DV$fdp$distrShift <- "DV"
-petro_DB$fdp$distrShift <- "DB"
-petro_DM$fdp$distrShift <- "DM"
-petro_DP$fdp$distrShift <- "DP"
 
-rbind(petro_DE$fdp, petro_DV$fdp, petro_DB$fdp, petro_DM$fdp, petro_DP$fdp) %>%
-  filter(Method %in% c("Aggregated", "Distinct")) %>%
-  mutate(distrShift = factor(distrShift, levels = c("DE","DV","DB","DM","DP"), ordered = T),,
-         Method = ifelse(Method == "Aggregated", "gamdid", Method),
-         Method = ifelse(Method == "Distinct", "distinct", Method)) %>%
-  filter(adjPval < 0.05 & !tp) %>% summarize(n = n(), .by = c(distrShift, Method)) %>%
-  complete(distrShift, Method, fill = list(n = 0)) %>%
-  ggplot() +
-  geom_col(aes(x= distrShift, y = n, fill = Method), position = "dodge") +
-  theme_paper() + scale_fill_simulations() -> figS3
+plot_gamdid_DE_leduc_subsample <- plotFdp(leduc_subsample_DE$fdp, selection = c("Aggregated", "distinct"), name = "gamdid", title = "DE") +
+  theme_paper() +
+  theme(axis.title.x = element_blank(),
+        plot.title = element_text(size = base_size, face = "bold", hjust = 0.5)) +
+  scale_color_simulations()
+plot_gamdid_DV_leduc_subsample <- plotFdp(leduc_subsample_DV$fdp, selection = c("Aggregated", "distinct"), name = "gamdid", title = "DV") +
+  theme_paper() +
+  theme(axis.title.x = element_blank(),
+        plot.title = element_text(size = base_size, face = "bold", hjust = 0.5)) +
+  scale_color_simulations()
+plot_gamdid_DB_leduc_subsample <- plotFdp(leduc_subsample_DB$fdp, selection = c("Aggregated", "distinct"), name = "gamdid", title = "DB") +
+  theme_paper() +
+  theme(axis.title.x = element_blank(),
+        plot.title = element_text(size = base_size, face = "bold", hjust = 0.5)) +
+  scale_color_simulations()
+plot_gamdid_DM_leduc_subsample <- plotFdp(leduc_subsample_DM$fdp, selection = c("Aggregated", "distinct"), name = "gamdid", title = "DM") +
+  theme_paper() +
+  theme(axis.title.x = element_blank(),
+        plot.title = element_text(size = base_size, face = "bold", hjust = 0.5)) +
+  scale_color_simulations()
+plot_gamdid_DP_leduc_subsample <- plotFdp(leduc_subsample_DP$fdp, selection = c("Aggregated", "distinct"), name = "gamdid", title = "DP") +
+  theme_paper() +
+  theme(plot.title = element_text(size = base_size, face = "bold", hjust = 0.5)) +
+  scale_color_simulations()
+
+ggarrange(plot_gamdid_DE_leduc_subsample, plot_gamdid_DV_leduc_subsample, plot_gamdid_DB_leduc_subsample, plot_gamdid_DM_leduc_subsample, plot_gamdid_DP_leduc_subsample,
+          common.legend = T, ncol = 1, legend = "top", heights = c(1,1,1,1,1.3)) -> figS3
 
 ggsave(filename = here::here("figures", "output", "jpg", "figS3.jpg"), plot = figS3,
-       width = FIG_WIDTH, height = FIG_HEIGHT,
+       width = FIG_WIDTH, height = FIG_HEIGHT_TRIPLE,
        dpi = FIG_DPI)
 ggsave(filename = here::here("figures", "output", "pdf", "figS3.pdf"), plot = figS3,
-       width = FIG_WIDTH, height = FIG_HEIGHT)
+       width = FIG_WIDTH, height = FIG_HEIGHT_TRIPLE)

@@ -2,31 +2,17 @@ library("here")
 source(here("R", "packages.R"))
 source(here("R", "utils.R"))
 
-leduc_DE <- readRDS(here("simulation_results", "leduc_DE_0.4"))
 leduc_DV <- readRDS(here("simulation_results", "leduc_DV_1.2"))
-leduc_DB <- readRDS(here("simulation_results", "leduc_DB_0.9"))
-leduc_DM <- readRDS(here("simulation_results", "leduc_DM_0.9"))
-leduc_DP <- readRDS(here("simulation_results", "leduc_DP_1"))
 
-leduc_DE$fdp$distrShift <- "DE"
-leduc_DV$fdp$distrShift <- "DV"
-leduc_DB$fdp$distrShift <- "DB"
-leduc_DM$fdp$distrShift <- "DM"
-leduc_DP$fdp$distrShift <- "DP"
+visFit(leduc_DV$sce_dd, feature = which(leduc_DV$tp)[21], plot = "diff") -> p
 
-rbind(leduc_DE$fdp, leduc_DV$fdp, leduc_DB$fdp, leduc_DM$fdp, leduc_DP$fdp) %>%
-  filter(Method %in% c("Aggregated", "Distinct")) %>%
-  mutate(distrShift = factor(distrShift, levels = c("DE","DV","DB","DM","DP"), ordered = T),,
-         Method = ifelse(Method == "Aggregated", "gamdid", Method),
-         Method = ifelse(Method == "Distinct", "distinct", Method)) %>%
-  filter(adjPval < 0.05 & tp) %>% summarize(n = n(), .by = c(distrShift, Method)) %>%
-  complete(distrShift, Method, fill = list(n = 0)) %>%
-  ggplot() +
-  geom_col(aes(x= distrShift, y = n, fill = Method), position = "dodge") +
-  theme_paper() + scale_fill_simulations() -> fig10
+p$SampleTypeA_VS_SampleTypeB +
+  theme_paper() + theme(title = element_blank(), axis.title.y = element_blank(),
+                        strip.text = element_text(size = base_size, color = "black", face = "plain"),
+                        strip.placement = "outside") -> fig10
 
 ggsave(filename = here::here("figures", "output", "jpg", "fig10.jpg"), plot = fig10,
-       width = FIG_WIDTH, height = FIG_HEIGHT,
+       width = FIG_WIDTH, height = FIG_HEIGHT_DOUBLE,
        dpi = FIG_DPI)
 ggsave(filename = here::here("figures", "output", "pdf", "fig10.pdf"), plot = fig10,
-       width = FIG_WIDTH, height = FIG_HEIGHT)
+       width = FIG_WIDTH, height = FIG_HEIGHT_DOUBLE)
