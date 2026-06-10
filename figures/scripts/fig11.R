@@ -10,10 +10,6 @@ prot_meanshift <- rownames(leduc_case_msqrob)[which(rowData(leduc_case_msqrob)$g
 prot_distrshift_gamdid <- rownames(leduc_case_gamdid)[which(rowData(leduc_case_gamdid)$"groupX_VS_groupY" < 0.05)]
 prot_distrshift_distinct <- names(leduc_case_distinct)[which(leduc_case_distinct < 0.05)]
 
-length(prot_meanshift)
-length(prot_distrshift_gamdid)
-length(prot_distrshift_distinct)
-
 prots <- rownames(rowData(leduc_case_msqrob)$groupY)
 
 id_distrshift_common <- which((prots %in% prot_distrshift_gamdid) & (prots %in% prot_distrshift_distinct))
@@ -42,6 +38,7 @@ ggplot() +
   ggtitle("DD analysis") +
   theme(plot.title = element_text(size = base_size, face = "bold", hjust = 0.5))-> volcano_dd
 
+
 fig11 <- ggarrange(volcano_de, volcano_dd, ncol = 1, legend = "top")
 
 ggsave(filename = here::here("figures", "output", "jpg", "fig11.jpg"), plot = fig11,
@@ -49,14 +46,3 @@ ggsave(filename = here::here("figures", "output", "jpg", "fig11.jpg"), plot = fi
        dpi = FIG_DPI)
 ggsave(filename = here::here("figures", "output", "pdf", "fig11.pdf"), plot = fig11,
        width = FIG_WIDTH, height = FIG_HEIGHT_TRIPLE)
-
-
-common_prots <- prot_meanshift[((prot_meanshift %in% prot_distrshift_gamdid)) & ((prot_meanshift %in% prot_distrshift_distinct))]
-msqrob2_only <- prot_meanshift[(!(prot_meanshift %in% prot_distrshift_gamdid)) & (!(prot_meanshift %in% prot_distrshift_distinct))]
-gamdid_only <- prot_distrshift_gamdid[(!(prot_distrshift_gamdid %in% prot_meanshift)) & (!(prot_distrshift_gamdid %in% prot_distrshift_distinct))]
-gamdid_msqrob2 <- prot_distrshift_gamdid[((prot_distrshift_gamdid %in% prot_meanshift)) & (!(prot_distrshift_gamdid %in% prot_distrshift_distinct))]
-distinct_only <- prot_distrshift_distinct[(!(prot_distrshift_distinct %in% prot_meanshift)) & (!(prot_distrshift_distinct %in% prot_distrshift_gamdid))]
-distinct_msqrob2 <- prot_distrshift_distinct[((prot_distrshift_distinct %in% prot_meanshift)) & (!(prot_distrshift_distinct %in% prot_distrshift_gamdid))]
-distinct_gamdid <- prot_distrshift_distinct[(!(prot_distrshift_distinct %in% prot_meanshift)) & ((prot_distrshift_distinct %in% prot_distrshift_gamdid))]
-
-visFit(leduc_case_gamdid, feature = distinct_only[2])

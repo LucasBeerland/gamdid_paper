@@ -2,40 +2,50 @@ library("here")
 source(here("R", "packages.R"))
 source(here("R", "utils.R"))
 
+leduc_case_msqrob <- readRDS(here("caseStudy_results", "leduc_case_msqrob"))
 leduc_case_gamdid <- readRDS(here("caseStudy_results", "leduc_case_gamdid"))
-leduc_case_mock_gamdid <- readRDS(here("caseStudy_results", "leduc_case_mock_gamdid"))
-names_spikein <- readRDS(here("caseStudy_results", "names_spikein"))
+leduc_case_distinct <- readRDS(here("caseStudy_results", "leduc_case_distinct"))
 
-f <- "P63241"
+prot_meanshift <- rownames(leduc_case_msqrob)[which(rowData(leduc_case_msqrob)$groupY$adjPval < 0.05)]
+prot_distrshift_gamdid <- rownames(leduc_case_gamdid)[which(rowData(leduc_case_gamdid)$"groupX_VS_groupY" < 0.05)]
+prot_distrshift_distinct <- names(leduc_case_distinct)[which(leduc_case_distinct < 0.05)]
 
-xmin <- min(assay(leduc_case_gamdid)[f, ], na.rm = T)
-xmax <- max(assay(leduc_case_gamdid)[f, ], na.rm = T)
+common_prots <- prot_meanshift[((prot_meanshift %in% prot_distrshift_gamdid)) & ((prot_meanshift %in% prot_distrshift_distinct))]
+msqrob2_only <- prot_meanshift[(!(prot_meanshift %in% prot_distrshift_gamdid)) & (!(prot_meanshift %in% prot_distrshift_distinct))]
+gamdid_only <- prot_distrshift_gamdid[(!(prot_distrshift_gamdid %in% prot_meanshift)) & (!(prot_distrshift_gamdid %in% prot_distrshift_distinct))]
+gamdid_msqrob2 <- prot_distrshift_gamdid[((prot_distrshift_gamdid %in% prot_meanshift)) & (!(prot_distrshift_gamdid %in% prot_distrshift_distinct))]
+distinct_only <- prot_distrshift_distinct[(!(prot_distrshift_distinct %in% prot_meanshift)) & (!(prot_distrshift_distinct %in% prot_distrshift_gamdid))]
+distinct_msqrob2 <- prot_distrshift_distinct[((prot_distrshift_distinct %in% prot_meanshift)) & (!(prot_distrshift_distinct %in% prot_distrshift_gamdid))]
+distinct_gamdid <- prot_distrshift_distinct[(!(prot_distrshift_distinct %in% prot_meanshift)) & ((prot_distrshift_distinct %in% prot_distrshift_gamdid))]
 
-visFit(leduc_case_mock_gamdid, feature = f)$groupX_VS_groupY +
-  theme_paper() + scale_fill_paper() +
-  theme(plot.title = element_blank(),
-        axis.title.x = element_blank()) +
-  xlim(xmin, xmax) -> ex_caseStudy_mock
-visFit(leduc_case_gamdid, feature = f)$groupX_VS_groupY +
-  theme_paper() + scale_fill_paper() +
-  theme(plot.title = element_blank(),
-        axis.title.x = element_blank()) +
-  xlim(xmin, xmax) -> ex_caseStudy
 
-assay(leduc_case_gamdid)[f, which(colnames(leduc_case_gamdid) %in% names_spikein)] %>%
-  as.data.frame() %>%
-  ggplot(aes(x = ., y = 0)) + geom_boxplot(size = 0.5) + geom_jitter(size = 0.5)+ theme_minimal() +
-  theme(axis.title.x = element_text(size = 10), axis.title.y = element_blank(),
-        axis.text.y = element_blank(), axis.ticks.y = element_blank(),
-        axis.ticks.x = element_blank(), axis.text.x = element_blank(),
-        panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
-  xlim(xmin,xmax) -> plot_spikein
+upset_gg <- as.ggplot(as.grob(function() print(comp_methods_plot))) + theme(plot.margin = margin(0, 0, 0, -80))
 
-ggarrange(ex_caseStudy_mock, ex_caseStudy, plot_spikein,
-          ncol = 1, common.legend = T,  heights = c(1, 1, 0.25), align = "v") -> fig12
+listInput <- list(
+  msqrob2  = rownames(leduc_case_msqrob)[which(rowData(leduc_case_msqrob)$groupY$adjPval < 0.05)],
+  gamdid   = rownames(leduc_case_gamdid)[which(rowData(leduc_case_gamdid)$"groupX_VS_groupY" < 0.05)],
+  distinct = names(leduc_case_distinct)[which(leduc_case_distinct < 0.05)]
+)
 
-ggsave(filename = here::here("figures", "output", "jpg", "fig12.jpg"), plot = fig12,
-       width = FIG_WIDTH, height = FIG_HEIGHT_DOUBLE,
-       dpi = FIG_DPI)
-ggsave(filename = here::here("figures", "output", "pdf", "fig12.pdf"), plot = fig12,
-       width = FIG_WIDTH, height = FIG_HEIGHT_DOUBLE)
+upset(
+  fromList(listInput),
+  sets           = c("msqrob2", "gamdid", "distinct"),
+  order.by       = "freq",
+  #keep.order     = TRUE,
+  sets.bar.color = c("#009E73", "#0072B2", "#E69F00"),
+  main.bar.color = "grey40",
+  matrix.color   = "grey30",
+  sets.x.label   = "Set size",
+  mainbar.y.label = "Intersection size",
+  text.scale     = c(1.3, 1.2, 1.1, 1.1, 1.2, 1.0)
+) -> fig12
+
+# PDF
+pdf(here::here("figures", "output", "pdf", "fig12.pdf"), width = FIG_WIDTH, height = FIG_HEIGHT_DOUBLE)
+print(fig12)
+dev.off()
+
+# JPG
+jpeg(here::here("figures", "output", "jpg", "fig12.jpg"), width = FIG_WIDTH, height = FIG_HEIGHT_DOUBLE, units = "in", res = 300)
+print(fig12)
+dev.off()
