@@ -2,8 +2,6 @@ library("here")
 source(here("R", "packages.R"))
 source(here("R", "utils.R"))
 
-
-
 petro_DB <- readRDS(here("simulation_results", "petro_DB_0.9"))
 
 ggplot(data.frame(x=assay(petro_DB$sce_dd)["Q921M3",], covariate = colData(petro_DB$sce_dd)[["SampleType"]])) +
