@@ -2,3 +2,7 @@
 .Rhistory
 .RData
 .Ruserdata
+simulation_results/*
+!simulation_results/README.md
+caseStudy_results/*
+!caseStudy_results/README.md
