@@ -98,3 +98,17 @@ rowData(leduc_case_msqrob)$groupY[setdiff(DD_features, DA_features),]
 rowData(leduc_case_gamdid)[setdiff(DD_features, DA_features),"groupX_VS_groupY"]
 
 
+# Compute execution times -> commented out because this takes about 45 minutes
+# library(microbenchmark)
+#
+# microbenchmark(
+#   method1 = compDistr(object = leduc_case, covariate = "group", minObs = 50),
+#   method2 = lapply(1:nrow(sce_distinct), function(i){
+#     idNotNA <- which(!is.na(assay(sce_distinct[i,])))
+#     pDis_i <- distinct_test(sce_distinct[i,idNotNA], "logcounts",
+#                             name_cluster = "cluster_id", name_sample = "sample_id", design = model, min_non_zero_cells = 0)
+#   }),
+#   times = 10L
+# )
+
+

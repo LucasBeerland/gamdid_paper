@@ -1,8 +1,0 @@
-.Rproj.user
-.Rhistory
-.RData
-.Ruserdata
-data/*.rds
-simulation_results/*.rds
-caseStudy_results/*.rds
-figures/scripts/figures_poster/*
