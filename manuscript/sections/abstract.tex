@@ -1,0 +1,24 @@
+\begin{abstract}
+
+Single-cell proteomics (SCP) generates protein abundance measurements across
+hundreds to thousands of individual cells, offering unprecedented resolution to
+study cellular heterogeneity. However, existing differential abundance (DA)
+methods are limited to detecting shifts in mean expression, leaving biologically
+relevant differences in shape undetected. Indeed, the specific power of SCP is
+to identify differences between individual cells in a population, which are
+typically only found as shape differences rather than in mean expression.
+We therefore present \texttt{gamdid} (generalized additive
+models for differential distributions), a novel statistical framework and R
+package for differential distribution (DD) analysis in SCP data. \texttt{gamdid}
+is based on generalized additive models (GAMs) to flexibly model heterogeneous
+distributions, perform inference and provide interpretable visualizations.
+Through semi-synthetic benchmarking on two SCP datasets, \texttt{gamdid}
+demonstrates conservative false discovery rate (FDR) control
+and substantially outperforms competing methods for differences in shape,
+while achieving comparable performance for mean shifts. A spike-in case study
+further demonstrates the utility of \texttt{gamdid} and its interpretable
+visualization. Uniquely among DD methods, \texttt{gamdid} supports omnibus
+testing across more than two groups, with post-hoc pairwise comparisons via
+stagewise testing, and is specifically tailored for proteomics abundance data.
+
+\end{abstract}

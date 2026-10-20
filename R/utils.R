@@ -127,12 +127,12 @@ makeFdpCurve <- function(sce_mock, id_groups, plot = TRUE, title = "Comparing me
 
   if (length(id_groups) > 2){
     # Construct fdp dataset
-    pAdjGam <- p.adjust(p = rowData(sce_dd)[,"omnibus_shape"], method = "fdr")
-    tpGam <- tprFdp(pval = rowData(sce_dd)[,"omnibus_shape"], tp = tp, adjPval = pAdjGam)
+    pAdjGam <- p.adjust(p = rowData(sce_dd)[,"omnibus_GAM"], method = "fdr")
+    tpGam <- tprFdp(pval = rowData(sce_dd)[,"omnibus_GAM"], tp = tp, adjPval = pAdjGam)
     tpGam$Method <- "GAM"
 
-    pAdjMsq <- p.adjust(p = rowData(sce_dd)[,"omnibus_location"], method = "fdr")
-    tpMsq <- tprFdp(pval = rowData(sce_dd)[,"omnibus_location"], tp = tp, adjPval = pAdjMsq)
+    pAdjMsq <- p.adjust(p = rowData(sce_dd)[,"omnibus_msqrob2"], method = "fdr")
+    tpMsq <- tprFdp(pval = rowData(sce_dd)[,"omnibus_msqrob2"], tp = tp, adjPval = pAdjMsq)
     tpMsq$Method <- "Msqrob"
 
     pAdjOmni <- p.adjust(p = rowData(sce_dd)[,"omnibus_aggregated"], method = "fdr")
@@ -140,12 +140,12 @@ makeFdpCurve <- function(sce_mock, id_groups, plot = TRUE, title = "Comparing me
     tpOmni$Method <- "Aggregated"
   } else {
     # Construct fdp dataset
-    pAdjGam <- p.adjust(p = rowData(sce_dd)[,"SampleTypeA_VS_SampleTypeB_shape"], method = "fdr")
-    tpGam <- tprFdp(pval = rowData(sce_dd)[,"SampleTypeA_VS_SampleTypeB_shape"], tp = tp, adjPval = pAdjGam)
+    pAdjGam <- p.adjust(p = rowData(sce_dd)[,"SampleTypeA_VS_SampleTypeB_GAM"], method = "fdr")
+    tpGam <- tprFdp(pval = rowData(sce_dd)[,"SampleTypeA_VS_SampleTypeB_GAM"], tp = tp, adjPval = pAdjGam)
     tpGam$Method <- "GAM"
 
-    pAdjMsq <- p.adjust(p = rowData(sce_dd)[,"SampleTypeA_VS_SampleTypeB_location"], method = "fdr")
-    tpMsq <- tprFdp(pval = rowData(sce_dd)[,"SampleTypeA_VS_SampleTypeB_location"], tp = tp, adjPval = pAdjMsq)
+    pAdjMsq <- p.adjust(p = rowData(sce_dd)[,"SampleTypeA_VS_SampleTypeB_msqrob2"], method = "fdr")
+    tpMsq <- tprFdp(pval = rowData(sce_dd)[,"SampleTypeA_VS_SampleTypeB_msqrob2"], tp = tp, adjPval = pAdjMsq)
     tpMsq$Method <- "Msqrob"
 
     pAdjOmni <- p.adjust(p = rowData(sce_dd)[,"SampleTypeA_VS_SampleTypeB_aggregated"], method = "fdr")
@@ -211,8 +211,8 @@ plotFdp <- function(tp_dat, selection = c("Aggregated", "distinct"), name = NULL
 }
 
 
-base_size   <- 10   # figure font size
-base_family <- "sans"
+BASE_SIZE   <- 10   # figure font size
+BASE_FAMILY <- "sans"
 
 PALETTE_MAIN <- c(
   "#D55E00", "#56B4E9", "#F0E442", "#009E73",
@@ -282,3 +282,127 @@ FIG_HEIGHT_DOUBLE  <- 5
 FIG_HEIGHT_TRIPLE  <- 8
 FIG_DPI <- 300
 
+
+# Korthauer et al. (2016) categories of distributional differences
+
+KORTHAUER_LABELS <- c(
+  DE = "DE: differential expression",
+  DV = "DV: differential variability",
+  DB = "DB: differential both",
+  DM = "DM: differential modality",
+  DP = "DP: differential proportion"
+)
+
+# Stack FDP-TPP curves of the simulation scenarios in one column with a shared
+# x-axis; results is a named list (names in KORTHAUER_LABELS) of simulation results
+plotFdpScenarios <- function(results, selection = c("Aggregated", "distinct"), name = NULL){
+  scenarios <- names(results)
+  plots <- lapply(seq_along(results), function(i){
+    p <- plotFdp(results[[i]]$fdp, selection = selection, name = name,
+                 title = KORTHAUER_LABELS[[scenarios[i]]]) +
+      theme_paper() +
+      theme(plot.title = element_text(size = BASE_SIZE, face = "bold", hjust = 0.5,
+                                      margin = margin(b = 2)),
+            plot.margin = margin(1, 3, 1, 3, "mm")) +
+      scale_color_simulations()
+    if (i < length(results)) {
+      p <- p + theme(axis.title.x = element_blank(), axis.text.x = element_blank())
+    }
+    p
+  })
+  ggarrange(plotlist = plots, common.legend = TRUE, ncol = 1, legend = "top",
+            heights = c(rep(1, length(plots) - 1), 1.2))
+}
+
+# FDP-TPP curves of the simulation scenarios for several datasets side by side:
+# one column per dataset, one row per scenario, with a shared x-axis per column.
+# datasets is a named list (column headers) of named lists of simulation results
+# (names in KORTHAUER_LABELS)
+plotFdpScenarioGrid <- function(datasets, selection = c("Aggregated", "distinct"), name = NULL){
+  scenarios <- names(datasets[[1]])
+  headers <- lapply(names(datasets), function(d)
+    wrap_elements(full = grid::textGrob(d, y = grid::unit(0.25, "npc"), vjust = 0,
+                                       gp = grid::gpar(fontsize = BASE_SIZE + 2, fontface = "bold"))))
+  panels <- list()
+  for (i in seq_along(scenarios)) {
+    for (j in seq_along(datasets)) {
+      p <- plotFdp(datasets[[j]][[scenarios[i]]]$fdp, selection = selection, name = name,
+                   title = KORTHAUER_LABELS[[scenarios[i]]]) +
+        theme_paper() +
+        theme(plot.title = element_text(size = BASE_SIZE, face = "bold", hjust = 0.5,
+                                        margin = margin(b = 2)),
+              plot.margin = margin(1, 3, 1, 3, "mm")) +
+        scale_color_simulations()
+      if (i < length(scenarios)) {
+        p <- p + theme(axis.title.x = element_blank(), axis.text.x = element_blank())
+      }
+      if (j > 1) p <- p + theme(axis.title.y = element_blank())
+      panels <- c(panels, list(p))
+    }
+  }
+  wrap_plots(c(headers, panels), ncol = length(datasets), byrow = TRUE,
+             heights = c(0.1, rep(1, length(scenarios) - 1), 1.2)) +
+    plot_layout(guides = "collect") &
+    theme(legend.position = "top")
+}
+
+# Bar charts of the number of true (truePositives = TRUE) or false positives of
+# gamdid and distinct at the given FDR level per simulation scenario, with one
+# panel per dataset; datasets is a named list (panel headers) of named lists of
+# simulation results (names in KORTHAUER_LABELS)
+plotPositivesGrid <- function(datasets, truePositives = TRUE, alpha = 0.05){
+  bind_rows(lapply(names(datasets), function(d)
+    bind_rows(lapply(names(datasets[[d]]), function(s)
+      mutate(datasets[[d]][[s]]$fdp, distrShift = s, dataset = d))))) %>%
+    filter(Method %in% c("Aggregated", "Distinct")) %>%
+    mutate(distrShift = factor(distrShift, levels = names(KORTHAUER_LABELS)),
+           dataset = factor(dataset, levels = names(datasets)),
+           Method = ifelse(Method == "Aggregated", "gamdid", "distinct")) %>%
+    filter(adjPval < alpha & tp == truePositives) %>%
+    summarize(n = n(), .by = c(dataset, distrShift, Method)) %>%
+    complete(dataset, distrShift, Method, fill = list(n = 0)) %>%
+    ggplot() +
+    geom_col(aes(x = distrShift, y = n, fill = Method), position = "dodge") +
+    facet_wrap(~ dataset) +
+    theme_paper() + scale_fill_simulations() +
+    theme(strip.text = element_text(size = BASE_SIZE + 2, face = "bold"))
+}
+
+# gamdid visualization of one feature of the spike-in case study: the mock
+# comparison (top), the comparison after spike-in (middle) and a boxplot of the
+# spiked-in cells (bottom), on a common x-axis
+plotCaseFeature <- function(f, fit, mockFit, spikein){
+  xmin <- min(assay(fit)[f, ], na.rm = T)
+  xmax <- max(assay(fit)[f, ], na.rm = T)
+
+  visFit(mockFit, feature = f)$groupX_VS_groupY +
+    theme_paper() + scale_fill_paper() +
+    theme(plot.title = element_blank(),
+          axis.title.x = element_blank()) +
+    xlim(xmin, xmax) -> ex_caseStudy_mock
+  visFit(fit, feature = f)$groupX_VS_groupY +
+    theme_paper() + scale_fill_paper() +
+    theme(plot.title = element_blank(),
+          axis.title.x = element_blank()) +
+    xlim(xmin, xmax) -> ex_caseStudy
+
+  assay(fit)[f, which(colnames(fit) %in% spikein)] %>%
+    as.data.frame() %>%
+    ggplot(aes(x = ., y = 0)) + geom_boxplot(size = 0.5) + geom_jitter(size = 0.5, position = position_jitter(seed = 1234)) + theme_minimal() +
+    theme(axis.title.x = element_text(size = 10), axis.title.y = element_blank(),
+          axis.text.y = element_blank(), axis.ticks.y = element_blank(),
+          axis.ticks.x = element_blank(), axis.text.x = element_blank(),
+          panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+    xlim(xmin, xmax) -> plot_spikein
+
+  ggarrange(ex_caseStudy_mock, ex_caseStudy, plot_spikein,
+            ncol = 1, common.legend = T,  heights = c(1, 1, 0.25), align = "v")
+}
+
+# Four case study features in a 2x2 grid with panel labels A-D
+plotCaseFeatureGrid <- function(features, fit, mockFit, spikein){
+  ggarrange(plotlist = lapply(features, plotCaseFeature, fit = fit,
+                              mockFit = mockFit, spikein = spikein),
+            ncol = 2, nrow = 2, labels = c("A", "B", "C", "D"),
+            font.label = list(size = BASE_SIZE + 2, face = "bold"))
+}

@@ -8,25 +8,19 @@ leduc_DB <- readRDS(here("simulation_results", "leduc_DB_0.9"))
 leduc_DM <- readRDS(here("simulation_results", "leduc_DM_0.9"))
 leduc_DP <- readRDS(here("simulation_results", "leduc_DP_1"))
 
-leduc_DE$fdp$distrShift <- "DE"
-leduc_DV$fdp$distrShift <- "DV"
-leduc_DB$fdp$distrShift <- "DB"
-leduc_DM$fdp$distrShift <- "DM"
-leduc_DP$fdp$distrShift <- "DP"
+petro_DE <- readRDS(here("simulation_results", "petro_DE_0.4"))
+petro_DV <- readRDS(here("simulation_results", "petro_DV_1.2"))
+petro_DB <- readRDS(here("simulation_results", "petro_DB_0.9"))
+petro_DM <- readRDS(here("simulation_results", "petro_DM_0.9"))
+petro_DP <- readRDS(here("simulation_results", "petro_DP_1"))
 
-rbind(leduc_DE$fdp, leduc_DV$fdp, leduc_DB$fdp, leduc_DM$fdp, leduc_DP$fdp) %>%
-  filter(Method %in% c("Aggregated", "Distinct")) %>%
-  mutate(distrShift = factor(distrShift, levels = c("DE","DV","DB","DM","DP"), ordered = T),,
-         Method = ifelse(Method == "Aggregated", "gamdid", Method),
-         Method = ifelse(Method == "Distinct", "distinct", Method)) %>%
-  filter(adjPval < 0.05 & !tp) %>% summarize(n = n(), .by = c(distrShift, Method)) %>%
-  complete(distrShift, Method, fill = list(n = 0)) %>%
-  ggplot() +
-  geom_col(aes(x= distrShift, y = n, fill = Method), position = "dodge") +
-  theme_paper() + scale_fill_simulations() -> figS1
+figS1 <- plotPositivesGrid(
+  list(Leduc = list(DE = leduc_DE, DV = leduc_DV, DB = leduc_DB, DM = leduc_DM, DP = leduc_DP),
+       Petrosius = list(DE = petro_DE, DV = petro_DV, DB = petro_DB, DM = petro_DM, DP = petro_DP)),
+  truePositives = TRUE)
 
 ggsave(filename = here::here("figures", "output", "jpg", "figS1.jpg"), plot = figS1,
-       width = FIG_WIDTH, height = FIG_HEIGHT,
+       width = 2 * FIG_WIDTH, height = FIG_HEIGHT,
        dpi = FIG_DPI)
 ggsave(filename = here::here("figures", "output", "pdf", "figS1.pdf"), plot = figS1,
-       width = FIG_WIDTH, height = FIG_HEIGHT)
+       width = 2 * FIG_WIDTH, height = FIG_HEIGHT)

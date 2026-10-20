@@ -2,31 +2,19 @@ library("here")
 source(here("R", "packages.R"))
 source(here("R", "utils.R"))
 
-leduc_DE <- readRDS(here("simulation_results", "leduc_DE_0.4"))
-leduc_DV <- readRDS(here("simulation_results", "leduc_DV_1.2"))
-leduc_DB <- readRDS(here("simulation_results", "leduc_DB_0.9"))
-leduc_DM <- readRDS(here("simulation_results", "leduc_DM_0.9"))
-leduc_DP <- readRDS(here("simulation_results", "leduc_DP_1"))
+# gamdid visualizations of four representative features detected by msqrob2,
+# gamdid and distinct in the spike-in case study
 
-leduc_DE$fdp$distrShift <- "DE"
-leduc_DV$fdp$distrShift <- "DV"
-leduc_DB$fdp$distrShift <- "DB"
-leduc_DM$fdp$distrShift <- "DM"
-leduc_DP$fdp$distrShift <- "DP"
+leduc_case_gamdid <- readRDS(here("caseStudy_results", "leduc_case_gamdid"))
+leduc_case_mock_gamdid <- readRDS(here("caseStudy_results", "leduc_case_mock_gamdid"))
+names_spikein <- readRDS(here("caseStudy_results", "names_spikein"))
 
-rbind(leduc_DE$fdp, leduc_DV$fdp, leduc_DB$fdp, leduc_DM$fdp, leduc_DP$fdp) %>%
-  filter(Method %in% c("Aggregated", "Distinct")) %>%
-  mutate(distrShift = factor(distrShift, levels = c("DE","DV","DB","DM","DP"), ordered = T),,
-         Method = ifelse(Method == "Aggregated", "gamdid", Method),
-         Method = ifelse(Method == "Distinct", "distinct", Method)) %>%
-  filter(adjPval < 0.05 & tp) %>% summarize(n = n(), .by = c(distrShift, Method)) %>%
-  complete(distrShift, Method, fill = list(n = 0)) %>%
-  ggplot() +
-  geom_col(aes(x= distrShift, y = n, fill = Method), position = "dodge") +
-  theme_paper() + scale_fill_simulations() -> fig8
+plotCaseFeatureGrid(c("P52566", "O43852", "P00387", "P06703"),
+                    fit = leduc_case_gamdid, mockFit = leduc_case_mock_gamdid,
+                    spikein = names_spikein) -> fig8
 
 ggsave(filename = here::here("figures", "output", "jpg", "fig8.jpg"), plot = fig8,
-       width = FIG_WIDTH, height = FIG_HEIGHT,
+       width = 2 * FIG_WIDTH, height = 2 * FIG_HEIGHT_DOUBLE,
        dpi = FIG_DPI)
 ggsave(filename = here::here("figures", "output", "pdf", "fig8.pdf"), plot = fig8,
-       width = FIG_WIDTH, height = FIG_HEIGHT)
+       width = 2 * FIG_WIDTH, height = 2 * FIG_HEIGHT_DOUBLE)

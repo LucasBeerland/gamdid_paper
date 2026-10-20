@@ -2,31 +2,43 @@ library("here")
 source(here("R", "packages.R"))
 source(here("R", "utils.R"))
 
-petro_DE <- readRDS(here("simulation_results", "petro_DE_0.4"))
-petro_DV <- readRDS(here("simulation_results", "petro_DV_1.2"))
+# Combined figure: DB feature (left) and DE feature (right) from the Petrosius
+# simulations
+
 petro_DB <- readRDS(here("simulation_results", "petro_DB_0.9"))
-petro_DM <- readRDS(here("simulation_results", "petro_DM_0.9"))
-petro_DP <- readRDS(here("simulation_results", "petro_DP_1"))
+petro_DE <- readRDS(here("simulation_results", "petro_DE_0.4"))
 
-petro_DE$fdp$distrShift <- "DE"
-petro_DV$fdp$distrShift <- "DV"
-petro_DB$fdp$distrShift <- "DB"
-petro_DM$fdp$distrShift <- "DM"
-petro_DP$fdp$distrShift <- "DP"
+plotEcdf <- function(sce, feature, title){
+  ggplot(data.frame(x = assay(sce)[feature,], covariate = colData(sce)[["SampleType"]])) +
+    stat_ecdf(aes(x = x, colour = covariate)) +
+    ggtitle(title) +
+    labs(x = "Normalized log2 intensity", y = "ECDF", colour = "SampleType") +
+    theme_paper() + scale_color_paper() +
+    theme(plot.title = element_text(size = BASE_SIZE, face = "bold", hjust = 0.5))
+}
 
-rbind(petro_DE$fdp, petro_DV$fdp, petro_DB$fdp, petro_DM$fdp, petro_DP$fdp) %>%
-  filter(Method %in% c("Aggregated", "Distinct")) %>%
-  mutate(distrShift = factor(distrShift, levels = c("DE","DV","DB","DM","DP"), ordered = T),,
-         Method = ifelse(Method == "Aggregated", "gamdid", Method),
-         Method = ifelse(Method == "Distinct", "distinct", Method)) %>%
-  filter(adjPval < 0.05 & tp) %>% summarize(n = n(), .by = c(distrShift, Method)) %>%
-  complete(distrShift, Method, fill = list(n = 0)) %>%
-  ggplot() +
-  geom_col(aes(x= distrShift, y = n, fill = Method), position = "dodge") +
-  theme_paper() + scale_fill_simulations() -> fig9
+plotGamdid <- function(sce, feature){
+  visFit(sce, feature = feature, plot = "hist")$SampleTypeA_VS_SampleTypeB +
+    theme_paper() + theme(plot.title = element_blank()) + scale_color_paper() + scale_fill_paper() +
+    labs(x = "Normalized log2 intensity")
+}
+
+# The ECDF and density panels share the same groups; keep only the density legend
+DB_distinct <- plotEcdf(petro_DB$sce_dd, "Q921M3", "DB: differential both") +
+  theme(legend.position = "none")
+DB_gamdid <- plotGamdid(petro_DB$sce_dd, "Q921M3")
+DE_distinct <- plotEcdf(petro_DE$sce_dd, "Q8K363", "DE: differential expression") +
+  theme(legend.position = "none")
+DE_gamdid <- plotGamdid(petro_DE$sce_dd, "Q8K363")
+
+fig9 <- ((DB_distinct / DB_gamdid) | (DE_distinct / DE_gamdid)) +
+  plot_layout(guides = "collect") +
+  plot_annotation(tag_levels = "A",
+                  theme = theme(legend.position = "bottom")) &
+  theme(plot.tag = element_text(size = BASE_SIZE + 2, face = "bold"))
 
 ggsave(filename = here::here("figures", "output", "jpg", "fig9.jpg"), plot = fig9,
-       width = FIG_WIDTH, height = FIG_HEIGHT,
+       width = 2 * FIG_WIDTH, height = FIG_HEIGHT_DOUBLE,
        dpi = FIG_DPI)
 ggsave(filename = here::here("figures", "output", "pdf", "fig9.pdf"), plot = fig9,
-       width = FIG_WIDTH, height = FIG_HEIGHT)
+       width = 2 * FIG_WIDTH, height = FIG_HEIGHT_DOUBLE)

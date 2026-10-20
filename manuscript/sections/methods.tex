@@ -1,0 +1,119 @@
+\section{Methods} \label{methods}
+{\color{red}
+
+Below, we first outline the \texttt{gamdid} approach (model equations,
+test statistics and the simultaneous confidence bands are discussed in
+more detail in the Supplementary materials).
+We subsequently describe the covariate adjustment procedure, the datasets,
+the simulation framework and the implementation.
+
+\subsection{Overview of the gamdid approach}
+
+The analysis is performed for each feature (protein or peptide) separately and
+consists of five steps (see Figure \ref{fig:workflow}).
+\\
+\\
+\textbf{Step 1: Estimating a smooth distribution per group}
+For a given feature, the abundance values of all cells are binned into a histogram,
+using the same bins for every group (see Figure \ref{fig:workflow}, panel A).
+Following Lindsey \cite{lindsay_method} and Efron \cite{efron}, the bin counts
+can be treated as Poisson counts.
+\\
+We then model the bin counts as a function of the bin midpoints using a
+Poisson GAM, which allows us to flexibly model the
+shape of the distribution with a smooth curve. Each group receives its own
+smooth curve (see Figure \ref{fig:workflow}, panel B).
+Equation \ref{eq:GAM_simple} schematically represents the smooth curve for group $c$
+and bin $k$ with midpoint $mid_k$.
+\begin{equation}
+    \log(\text{expected count}_{ck}) = \underbrace{f_c(mid_k)}_{\text{density estimation for group } c} + \text{normalization offset}_c
+    \label{eq:GAM_simple}
+\end{equation}
+where $f_c$ is a flexible smooth function that captures the shape of the distribution of group $c$.
+The counts are normalized using an offset, which allows us to interpret the curves
+as densities.
+\\
+\\
+\textbf{Step 2: Testing whether the distributions differ}
+If two groups have the same distribution, their smooth curves are identical,
+i.e. $H_0: f_{c_1} = f_{c_2}$. We test this by assessing if
+the parameters corresponding to a smooth curve $\beta_{f_c}$
+differ between the groups, i.e. $H_0: \beta_{f_{c_1}} = \beta_{f_{c_2}}$.
+We do this by employing a Wald-type test that builds on the work of Wood \cite{Wald}.
+The resulting p-value, referred to as the GAM p-value, captures any difference in
+distribution between the groups: mean shifts, differences in variance, modality,
+skewness...
+\\
+\\
+\textbf{Step 3: Combining with a mean-shift test}
+Because the GAM test spreads its power over all possible types of distributional
+differences,
+it is less powerful than a dedicated DA method for detecting pure mean shifts.
+We therefore also compute a p-value with \texttt{msqrob2}, a robust linear-model
+approach designed for detecting mean shifts in proteomics data \cite{msqrob}.
+The GAM and
+\texttt{msqrob2} p-values are combined into a single 'feature-level aggregated
+p-value' using the harmonic mean p-value (HMP) method \cite{harmonicp}.
+As a result, \texttt{gamdid} largely retains the
+sensitivity of conventional DA analysis for mean shifts, while additionally
+detecting changes in distributional shape that DA methods miss.
+\\
+\\
+\textbf{Step 4: Multiple testing and pairwise comparisons}
+The feature-level aggregated p-values are corrected for multiple testing across
+features using the Benjamini-Hochberg FDR procedure
+\cite{BH_procedure}. When more than two groups are compared, significant features
+are followed up with pairwise comparisons between all pairs of groups, using the
+same combination of GAM and \texttt{msqrob2} tests. The feature-level and pairwise
+hypotheses are jointly controlled for multiple testing by the stagewise testing
+procedure \cite{stagewise_testing, stager}.
+\\
+\\
+\textbf{Step 5: Detecting differential regions}
+Finally, \texttt{gamdid} can indicate where the
+distributions differ. For this, a log-difference smoother is computed. This
+smoother displays the difference between the estimated log-densities of two
+groups, together with a simultaneous confidence band. Regions where this
+band excludes zero indicate a statistically significant local distributional
+difference; these are marked by gray shading (Figure \ref{fig:workflow}, panel C).
+}
+
+\subsection{Covariate adjustment}
+In addition to the covariate of interest, \texttt{gamdid} allows users to account
+for confounding variables through a nuisance formula, enabling applications such
+as batch correction in multi-batch experimental designs. Both the covariate of
+interest and the nuisance formula are combined into one model in the \texttt{msqrob2}
+analysis, and an appropriate contrast is constructed to test for distributional
+differences in the covariate of interest.\\
+To remove the influence of nuisance covariates from the GAM-based inference,
+partial residuals with respect to the covariate of interest are computed from
+the \texttt{msqrob2} fit and subsequently used as input to the GAM analysis.
+This two-step approach is required due to the binning strategy: as a single bin
+may contain observations that correspond to different groups of the nuisance
+covariate, direct covariate adjustment within the GAM framework is not feasible.\\
+Note, however, that the uncertainty associated with the regression of the nuisance
+covariates in the first step is not accounted for, so the resulting p-values should be
+interpreted with caution.
+
+\subsection{Data}
+\begin{itemize}
+    \item \texttt{leduc2022\_pSCoPE}: These data were acquired using pSCoPE technology: a TMT-18plex protocol with prioritized data-dependent acquisition (DDA) carried out by a Thermo Scientific Q-Exactive mass spectrometer \cite{leduc}. The MS data were identified and quantified using MaxQuant version 1.6.17 \cite{maxquant}. We performed quality control by filtering low-quality features and filtering cells with a median coefficient of variation greater than 0.6, calculated using the \textit{medianCVperCell} function of the \texttt{scp} package \cite{scp_paper}. The PSM intensities were log2-transformed for variance-stabilization, median centered and summarized to the protein level using median summarization per MS run. Subsequently, samples were normalized through median centering and proteins with more than 95\% missingness were filtered out, resulting in a dataset with 776 melanoma cells and 755 monocytes profiled across 2120 proteins.
+    \item \texttt{petrosius2023\_mES}: These data originate from a label-free SCP experiment conducted on mouse embryonic stem cells cultured under two distinct conditions: a serum-free 2i condition (m2i) containing cytokine LIF and inhibitors targeting the MEK and GSK3 pathways, and a serum condition (m15) only containing cytokine LIF \cite{petro}. Data acquisition was performed using an Orbitrap Eclipse Tribrid mass spectrometer operating in data-independent acquisition (DIA) mode. The resulting mass spectrometry data were subsequently analyzed by the authors using Spectronaut v17 \cite{spectronaut}.
+    We performed quality control by removing cells with fewer than 500 detected peptides or a median intensity lower than 11. Features with more than 95\% missing values were also removed. The detected intensities were log2-transformed for variance-stabilization, and the intensities of each cell were centered with the median log2-intensity of the corresponding cell. Subsequently, peptides were summarized to the protein level through median polish summarization. The resulting dataset contains 295 m15 and 269 m2i cells with 2492 proteins.
+\end{itemize}
+Preprocessed protein-level summarized assays from both datasets served as the foundation for our simulations. From the Petrosius dataset, we selected the 269 m2i-condition cells, while from Leduc, we selected the 755 monocytes (in both cases following removal of non-informative cells during preprocessing). Within each selected subset, no systematic biological differences are expected between cells. Consequently, random assignment of cells to two mock groups (A and B) yields a dataset suitable as a mock basis for a controlled two-group comparative analysis.
+
+\subsection{Simulation framework}
+The benchmark simulations are based on protein-level mock data from both the Leduc and Petrosius datasets, as described in the Results section. For each dataset, mock groups A and B were formed by random assignment of cells, and distributional signal was introduced in group B for 20\% of randomly selected features. Five types of distributional signal were considered, following the framework of Korthauer et al. (2016) \cite{scdd}:
+\begin{itemize}
+    \item \textbf{DE:} A shift equal to 40\% of the feature's standard deviation is added to all observations in group B.
+    \item \textbf{DV:} Independent Gaussian noise with mean zero and standard deviation equal to 120\% of the feature's standard deviation is added to all observations in group B, thereby increasing the spread of the distribution without altering its mean.
+    \item \textbf{DB:} For 50\% of the observations in group B, a value of 90\% of the feature's standard deviation is added; for the remaining 50\%, the same value is subtracted. This induces a bimodal distribution in group B.
+    \item \textbf{DM:} A value of 90\% of the feature's standard deviation is added to 50\% of the observations in group B, creating an asymmetric shift concentrated in one tail.
+    \item \textbf{DP:} In both groups, observations are split into two subpopulations that are shifted upwards or downwards by 100\% of the feature's standard deviation. In group A, 40\% of the observations are shifted upwards and the remaining 60\% downwards; in group B, 70\% are shifted upwards and 30\% downwards. Both groups are therefore bimodal with identical component locations but different mixing proportions, which also results in a difference in group means of 0.6 standard deviations. In the three-group simulations, group C is treated identically to group A.
+\end{itemize}
+
+
+\subsection{Implementation}
+The methods for assessing differential distributions are implemented in the \texttt{gamdid} R package that is publicly available through GitHub (github.com/statOmics/gamdid) and will be submitted to Bioconductor.\\
+\texttt{gamdid} builds upon the CRAN packages \texttt{mgcv} \cite{mgcv} and \texttt{harmonicmeanp} \cite{hmp_package} for fitting generalized additive models and p-value aggregation; and on the R/Bioconductor packages \texttt{stageR} \cite{stager} for stagewise testing and \texttt{msqrob2} for detecting shifts in mean abundance \cite{msqrob}. Specifically, \texttt{mgcv} version 1.9.4, \texttt{harmonicmeanp} version 3.0.1, \texttt{stageR} version 1.32.0 and \texttt{msqrob2} version 1.18.0 were used in R version 4.5.3.

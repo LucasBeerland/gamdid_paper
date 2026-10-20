@@ -299,3 +299,5 @@ leduc_multi_bimodshift3_1 <- makeFdpCurve(sce_mock = leduc_multi_mock,
                                           bimodprop2 = 0.7, seed = 1234, minObs = 50, compare = F)
 saveRDS(object = leduc_multi_bimodshift3_1, here("simulation_results", "leduc_multi_DP_1"))
 
+# Record R and package versions in the .Rout file
+sessionInfo()

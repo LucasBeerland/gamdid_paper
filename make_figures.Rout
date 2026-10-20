@@ -1,0 +1,329 @@
+
+R version 4.6.0 (2026-04-24) -- "Because it was There"
+Copyright (C) 2026 The R Foundation for Statistical Computing
+Platform: aarch64-apple-darwin23
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> ####---- Generate the manuscript figures ----####
+> 
+> ## Run the figure scripts (they write to figures/output/{pdf,jpg})
+> source(here::here("make_figures.R"))
+here() starts at /Users/lucasbeerland/Library/CloudStorage/OneDrive-UGent/projecten/gamdid/final/gamdid_paper
+Loading required package: QFeatures
+Loading required package: MultiAssayExperiment
+Loading required package: SummarizedExperiment
+Loading required package: MatrixGenerics
+Loading required package: matrixStats
+
+Attaching package: 'MatrixGenerics'
+
+The following objects are masked from 'package:matrixStats':
+
+    colAlls, colAnyNAs, colAnys, colAvgsPerRowSet, colCollapse,
+    colCounts, colCummaxs, colCummins, colCumprods, colCumsums,
+    colDiffs, colIQRDiffs, colIQRs, colLogSumExps, colMadDiffs,
+    colMads, colMaxs, colMeans2, colMedians, colMins, colOrderStats,
+    colProds, colQuantiles, colRanges, colRanks, colSdDiffs, colSds,
+    colSums2, colTabulates, colVarDiffs, colVars, colWeightedMads,
+    colWeightedMeans, colWeightedMedians, colWeightedSds,
+    colWeightedVars, rowAlls, rowAnyNAs, rowAnys, rowAvgsPerColSet,
+    rowCollapse, rowCounts, rowCummaxs, rowCummins, rowCumprods,
+    rowCumsums, rowDiffs, rowIQRDiffs, rowIQRs, rowLogSumExps,
+    rowMadDiffs, rowMads, rowMaxs, rowMeans2, rowMedians, rowMins,
+    rowOrderStats, rowProds, rowQuantiles, rowRanges, rowRanks,
+    rowSdDiffs, rowSds, rowSums2, rowTabulates, rowVarDiffs, rowVars,
+    rowWeightedMads, rowWeightedMeans, rowWeightedMedians,
+    rowWeightedSds, rowWeightedVars
+
+Loading required package: GenomicRanges
+Loading required package: stats4
+Loading required package: BiocGenerics
+Loading required package: generics
+
+Attaching package: 'generics'
+
+The following objects are masked from 'package:base':
+
+    as.difftime, as.factor, as.ordered, intersect, is.element, setdiff,
+    setequal, union
+
+
+Attaching package: 'BiocGenerics'
+
+The following objects are masked from 'package:stats':
+
+    IQR, mad, sd, var, xtabs
+
+The following objects are masked from 'package:base':
+
+    Filter, Find, Map, Position, Reduce, anyDuplicated, aperm, append,
+    as.data.frame, basename, cbind, colnames, dirname, do.call,
+    duplicated, eval, evalq, get, grep, grepl, is.unsorted, lapply,
+    mapply, match, mget, order, paste, pmax, pmax.int, pmin, pmin.int,
+    rank, rbind, rownames, sapply, saveRDS, table, tapply, unique,
+    unsplit, which.max, which.min
+
+Loading required package: S4Vectors
+
+Attaching package: 'S4Vectors'
+
+The following object is masked from 'package:utils':
+
+    findMatches
+
+The following objects are masked from 'package:base':
+
+    I, expand.grid, unname
+
+Loading required package: IRanges
+Loading required package: Seqinfo
+Loading required package: Biobase
+Welcome to Bioconductor
+
+    Vignettes contain introductory material; view with
+    'browseVignettes()'. To cite Bioconductor, see
+    'citation("Biobase")', and for packages 'citation("pkgname")'.
+
+
+Attaching package: 'Biobase'
+
+The following object is masked from 'package:MatrixGenerics':
+
+    rowMedians
+
+The following objects are masked from 'package:matrixStats':
+
+    anyMissing, rowMedians
+
+
+Attaching package: 'QFeatures'
+
+The following object is masked from 'package:base':
+
+    sweep
+
+Loading required package: ExperimentHub
+Loading required package: AnnotationHub
+Loading required package: BiocFileCache
+Loading required package: dbplyr
+
+Attaching package: 'AnnotationHub'
+
+The following object is masked from 'package:Biobase':
+
+    cache
+
+
+This is scpdata version 1.20.0.
+Use 'scpdata()' to list available data sets.
+
+Attaching package: 'cowplot'
+
+The following object is masked from 'package:patchwork':
+
+    align_plots
+
+
+Attaching package: 'dplyr'
+
+The following objects are masked from 'package:dbplyr':
+
+    ident, sql
+
+The following object is masked from 'package:Biobase':
+
+    combine
+
+The following objects are masked from 'package:GenomicRanges':
+
+    intersect, setdiff, union
+
+The following object is masked from 'package:Seqinfo':
+
+    intersect
+
+The following objects are masked from 'package:IRanges':
+
+    collapse, desc, intersect, setdiff, slice, union
+
+The following objects are masked from 'package:S4Vectors':
+
+    first, intersect, rename, setdiff, setequal, union
+
+The following objects are masked from 'package:BiocGenerics':
+
+    combine, intersect, setdiff, setequal, union
+
+The following object is masked from 'package:generics':
+
+    explain
+
+The following object is masked from 'package:matrixStats':
+
+    count
+
+The following objects are masked from 'package:stats':
+
+    filter, lag
+
+The following objects are masked from 'package:base':
+
+    intersect, setdiff, setequal, union
+
+
+Attaching package: 'tidyr'
+
+The following object is masked from 'package:S4Vectors':
+
+    expand
+
+
+Attaching package: 'msqrob2'
+
+The following object is masked from 'package:gamdid':
+
+    topFeatures
+
+Loading required package: nlme
+
+Attaching package: 'nlme'
+
+The following object is masked from 'package:dplyr':
+
+    collapse
+
+The following object is masked from 'package:IRanges':
+
+    collapse
+
+This is mgcv 1.9-4. For overview type '?mgcv'.
+
+Attaching package: 'stageR'
+
+The following object is masked from 'package:methods':
+
+    getMethod
+
+Loading required package: FMStable
+Registered S3 method overwritten by 'car':
+  method           from
+  na.action.merMod lme4
+
+Attaching package: 'ggpubr'
+
+The following object is masked from 'package:cowplot':
+
+    get_legend
+
+$SampleTypeMelanoma_VS_SampleTypeMonocyte
+
+Scale for fill is already present.
+Adding another scale for fill, which will replace the existing scale.
+Scale for colour is already present.
+Adding another scale for colour, which will replace the existing scale.
+$SampleTypeMelanoma_VS_SampleTypeMonocyte
+
+$SampleTypeA_VS_SampleTypeB
+
+$groupX_VS_groupY
+
+Scale for fill is already present.
+Adding another scale for fill, which will replace the existing scale.
+$groupX_VS_groupY
+
+Scale for fill is already present.
+Adding another scale for fill, which will replace the existing scale.
+$groupX_VS_groupY
+
+Scale for fill is already present.
+Adding another scale for fill, which will replace the existing scale.
+$groupX_VS_groupY
+
+Scale for fill is already present.
+Adding another scale for fill, which will replace the existing scale.
+$groupX_VS_groupY
+
+Scale for fill is already present.
+Adding another scale for fill, which will replace the existing scale.
+$groupX_VS_groupY
+
+Scale for fill is already present.
+Adding another scale for fill, which will replace the existing scale.
+$groupX_VS_groupY
+
+Scale for fill is already present.
+Adding another scale for fill, which will replace the existing scale.
+$groupX_VS_groupY
+
+Scale for fill is already present.
+Adding another scale for fill, which will replace the existing scale.
+$SampleTypeA_VS_SampleTypeB
+
+Scale for colour is already present.
+Adding another scale for colour, which will replace the existing scale.
+Scale for fill is already present.
+Adding another scale for fill, which will replace the existing scale.
+$SampleTypeA_VS_SampleTypeB
+
+Scale for colour is already present.
+Adding another scale for colour, which will replace the existing scale.
+Scale for fill is already present.
+Adding another scale for fill, which will replace the existing scale.
+$groupX_VS_groupY
+
+Scale for fill is already present.
+Adding another scale for fill, which will replace the existing scale.
+$groupX_VS_groupY
+
+Scale for fill is already present.
+Adding another scale for fill, which will replace the existing scale.
+$groupX_VS_groupY
+
+Scale for fill is already present.
+Adding another scale for fill, which will replace the existing scale.
+$groupX_VS_groupY
+
+Scale for fill is already present.
+Adding another scale for fill, which will replace the existing scale.
+$groupX_VS_groupY
+
+Scale for fill is already present.
+Adding another scale for fill, which will replace the existing scale.
+$groupX_VS_groupY
+
+Scale for fill is already present.
+Adding another scale for fill, which will replace the existing scale.
+$groupX_VS_groupY
+
+Scale for fill is already present.
+Adding another scale for fill, which will replace the existing scale.
+$groupX_VS_groupY
+
+Scale for fill is already present.
+Adding another scale for fill, which will replace the existing scale.
+There were 50 or more warnings (use warnings() to see the first 50)
+> 
+> ## Copy the jpg figures (included by the manuscript) to the manuscript folder
+> figDir <- here::here("manuscript", "figs")
+> figs <- list.files(here::here("figures", "output", "jpg"),
++                    pattern = "\\.jpg$", full.names = TRUE)
+> file.copy(figs, figDir, overwrite = TRUE)
+ [1] TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE TRUE
+[16] TRUE TRUE
+> 
+> proc.time()
+   user  system elapsed 
+ 83.066   5.799  89.154 

@@ -1,0 +1,237 @@
+\subsection{Supplementary methods: full statistical derivation} \label{suppl_methods}
+
+This section provides the full mathematical details underlying the \texttt{gamdid} approach summarized in the Methods section. We first detail the density estimation approach and the Poisson generalized additive model used. We subsequently describe the inference procedure and the p-value aggregation strategy. Next we elaborate on the post-hoc pairwise comparisons and stagewise testing procedure, followed by the approach for identifying regions of differential density. The section closes with a description of the covariate adjustment procedure and the two datasets used throughout the manuscript.
+
+\subsubsection{Model and inference}
+
+The statistical methodology for comparing distributions is developed for a single feature (in this case proteins or peptides). The method is then simply repeated over multiple features and the corresponding p-values are corrected for multiple testing using conventional Benjamini-Hochberg false discovery rate (FDR) method \cite{BH_procedure} or stagewise testing \cite{stagewise_testing}.
+\\
+\\
+\textbf{Density estimation through Poisson regression} Following the approach of Lindsay \cite{lindsay_method}, we reformulate density estimation in terms of Poisson regression by discretizing the sample space. We partition the sample space $\mathscr{Y}$ into K disjoint bins $\mathscr{Y}_k$ of equal binwidth $bw$.
+
+\begin{equation}
+	\mathscr{Y} =\bigcup_{k=1}^K \mathscr{Y}_k
+	\label{eq:discr}
+\end{equation}
+
+The data $\boldsymbol{y} = (y_1,y_2, ... y_n)^T$ are summarized into bin counts $\boldsymbol{s} = (s_1,s_2, ... s_K)^T$ where each count $s_k$ represents the number of observations falling into the $k$-th bin:
+
+\begin{equation}
+    s_k = \# \{ y_i \in \mathscr{Y}_k \}\quad 
+    \text{for } k=1,2, \ldots K
+	\label{eq:binning}
+\end{equation}
+
+The sum of these counts equals the total number of observations $n$. Conceptually, this process is equivalent to constructing a histogram of the data, where each bin $\mathcal{Y}_k$ is associated with a count $s_k$ and represented by a midpoint $mid_k$.
+
+We consider $s_k$ to be independent Poisson observations with expected values $\mu_k$
+
+\begin{equation}
+    s_k \stackrel{\text { ind }}{\sim}
+    \operatorname{Po}\left(\mu_k\right) \quad 
+    \text{for } k=1,2, \ldots K
+    \label{eq:poisson}
+\end{equation}
+
+Consequently, the problem of density estimation is recast in spline-based Poisson regression of the bin counts $s_k$ in function of the bin midpoints $mid_k$ \cite{efron}.
+\\
+\\
+\textbf{Poisson generalized additive model}
+The expected bin counts $\mu_k$ are modelled using Poisson regression implemented in the existing R package \texttt{mgcv} \cite{mgcv} for generalized additive models (GAM). 
+
+The linear predictor of a standard GAM model with one smoother ($f(mid_k)$) is given by equation \ref{eq:gam}.
+
+\begin{equation}
+    g(\mu_k) = \boldsymbol{A}_k\boldsymbol{\gamma} + f(mid_k)
+    \label{eq:gam}
+\end{equation}
+
+with $\boldsymbol{A}_k$ the k-th row of the parametric $K \times G$ model matrix $\boldsymbol{A}$ and $\boldsymbol{\gamma}$ the parametric part of the model parameter vector. For Poisson distributed data, the link function $g$ is a log function.
+
+The relationship between $log(\mu_k)$ and $mid_k$, $f(mid_k)$, is modeled using penalized thin plate regression splines (see equation \ref{eq:splines}) that provide a basis function expansion, i.e.
+
+\begin{equation}
+    f(mid_k) = \sum_{p=1}^{P}\delta_p\phi_p(mid_k)
+    \label{eq:splines}
+\end{equation}
+
+where $\phi_p(.)$ are thin plate spline basis functions, $\delta_p$ are the corresponding smooth basis parameters to be estimated. Let $\boldsymbol{{\beta}} = (\boldsymbol{\gamma},\boldsymbol{\delta})$ where $\boldsymbol{\delta} = (\delta_1,\dots, \delta_P)^T$.\\
+Let $\boldsymbol{\Phi}$ be the $K \times P$ model matrix of the basis function evaluated in the midpoint: $\phi_p(mid_k)$.
+We then combine $\boldsymbol{A}$ and $\boldsymbol{\Phi}$ in the $K \times (G+P)$ model matrix $\boldsymbol{X} = (\boldsymbol{A} : \boldsymbol{\Phi})$
+
+$\boldsymbol{\beta}$ is estimated by maximizing the penalized log-likelihood (see equation \ref{eq:beta_est})
+\begin{equation}
+    \hat{\boldsymbol{\beta}}=\arg \max _{\beta}\left\{l(\boldsymbol{\beta}|\boldsymbol{s})-\frac{1}{2} \lambda \boldsymbol{\beta}^{\mathrm{T}} \boldsymbol{S} \boldsymbol{\beta}\right\}
+    \label{eq:beta_est}
+\end{equation}
+
+The optimization is typically performed using penalized iteratively reweighted least squares (PIRLS). Here, $l(\boldsymbol{\beta}|\boldsymbol{s})$ is the log likelihood of the data given $\boldsymbol{\beta}$, $\lambda$ is the smoothing parameter that balances goodness-of-fit with smoothness, and $\boldsymbol{S}$ is the penalty matrix quantifying the wiggliness of the basis functions that has zeros on the rows and columns involving parameters for $\boldsymbol{A}$ \cite{gambook_gamtheory_setup}. We exploit the link between Bayesian statistics, smooth functions, and mixed models to estimate this smoothing parameter $\lambda$ using the REML method \cite{gambook_gamtheory_reml}, \cite{ruppert_reml}.
+
+To approximate the effective degrees of freedom (edf) of the model, we define the influence matrix $\boldsymbol{H}$ in equation \ref{eq:infl_mat}.
+
+\begin{equation}
+    \boldsymbol{H} = (\boldsymbol{X}^T\boldsymbol{W}\boldsymbol{X} + \lambda \boldsymbol{S})^{-1}\boldsymbol{X}^T\boldsymbol{W}\boldsymbol{X}
+    \label{eq:infl_mat}
+\end{equation}
+
+with $\boldsymbol{W}$ the diagonal weight matrix from the final PIRLS iteration, where $W_{kk} = \mu_k = exp(\boldsymbol{X}_k^T \hat{\boldsymbol{\beta}})$ and $\boldsymbol{X}_k$ is the k-th row of $\boldsymbol{X}$.
+
+In the GAM literature $2\boldsymbol{H} - \boldsymbol{H}\boldsymbol{H}$ is the bias corrected influence matrix (the bias arises due to smoothing), so its trace can be seen as the effective degrees of freedom of the bias corrected model (see equation \ref{eq:edf}) \cite{gambook_gamtheory_edf}.
+
+\begin{equation}
+    edf = 2tr(\boldsymbol{H}) - tr(\boldsymbol{H}\boldsymbol{H})
+    \label{eq:edf}
+\end{equation}
+\\
+\\
+\textbf{Comparing distributions across groups} We build on this framework to detect distributional differences across multiple groups. Let $c$ be the groups of grouping variable $C$.\\ 
+Next, the overall sample space $\mathscr{Y}$ is partitioned for all groups $c$ into K disjoint bins $\mathscr{Y}_k$ of equal width $bw$ (as in equation \ref{eq:discr}), ensuring identical bins (and thus midpoints $mid_k$) for all groups $c \in C$, as illustrated in figure \ref{fig:workflow} panel A. For each group $c$, a count vector $\boldsymbol{s_c} = (s_{c_1}, s_{c_2},...,s_{c_K})$ is obtained, where $s_{c_k}$ is the number of observations from group $c$ in the k-th bin.
+
+The full model allows for different distributions across groups, with the linear predictor specified in equation \ref{eq:gamHa}.
+
+\begin{equation}
+    \ln \mu_{ck} = \sum_{c \in C}\gamma_cx_c + \sum_{c \in C} f_c(mid_k)x_c + ln(O_c)
+    \label{eq:gamHa}
+\end{equation}
+
+where each group $c$ has its own intercept $\gamma_c$ and smooth function $f_c$, with identical smoothing parameter $\lambda$ among all groups.
+
+The offset $O_c$ is defined as
+
+\begin{equation}
+    O_c = bw \times n_c
+    \label{eq:offset}
+\end{equation}
+
+where $n_c$ is the total number of observations in group $c$. This allows for normalization of different sample sizes across groups and ensures that the fitted smooth functions $exp(\gamma_c + f_c(mid_k))$ can be directly interpreted as probability density.
+
+Conversely, the null model assumes a common density function across all groups of $C$. The linear predictor is modeled as in equation \ref{eq:gamH0}.
+
+\begin{equation}
+    \log \mu_{ck} = \sum_{c \in C}\gamma_cx_c + f(mid_k) + ln(O_c)
+    \label{eq:gamH0}
+\end{equation}
+
+where $x_c$ is a dummy variable for the groups of covariate $C$,  $\mu_{ck}$ is the expected count for group $c$ in bin k, and the smooth function $f(\text{mid}_k)$ is shared across all groups. $O_c$ is an offset term.
+\\
+\\
+\textbf{Inference for distributional differences} 
+Two approaches were considered for testing whether distributions differ across groups.
+
+\begin{itemize}
+    \item Generalized likelihood ratio test (GLRT)
+\end{itemize}
+This approach is possible by comparing the full and the null model. However, it requires fitting two models and does not directly provide pairwise comparisons for a multi group setting. Therefore, we provide a Wald-type test below and refer the reader to the supplementary materials for the GLRT test.
+
+\begin{itemize}
+    \item Wald-type test
+\end{itemize}
+
+A more practical approach involves Wald-type tests on the parameters of the smooth functions of the full model (see equation \ref{eq:gamHa}). This method builds on tests proposed by Simon Wood, which assess whether a smoother significantly deviates from zero, $H_0 : f_c = 0$ \cite{Wald}.
+
+We extend this idea to test whether multiple smooth functions are identical across $G$ groups. Specifically, we test the null hypothesis $H_0 : f_{c_1} = f_{c_2} = \dots = f_{c_G}$. 
+This hypothesis can be reformulated as a Wald test on the corresponding basis function parameters. Indeed, equality of smooth functions $f_{c_1} = f_{c_2} = \cdots = f_{c_G}$ implies equality of their associated parameter vectors $\boldsymbol{\beta}_{c_1} = \boldsymbol{\beta}_{c_2} = \cdots = \boldsymbol{\beta}_{c_G}$ if basis functions are shared across all groups.
+
+To test this hypothesis, we define contrasts on the full vector of basis function parameters $\hat{\boldsymbol{\beta}}_{\text{full}} = (\hat{\boldsymbol{\beta}}_{c_1}, \dots, \hat{\boldsymbol{\beta}}_{c_G})$ from the full model in equation \ref{eq:gamHa}. The null hypothesis can then be expressed as $H_0: \boldsymbol{L}\boldsymbol{\beta}_{\text{full}} = 0$ where $\boldsymbol{L}$ is a contrast matrix encoding $G-1$ independent differences between parameter vectors, i.e. ($\boldsymbol{\beta}_{c_1} - \boldsymbol{\beta}_{c_g} = 0$ for $g = 2,\cdots,G$).\\
+The corresponding Wald statistic is then given by equation \ref{eq:wald_difftest}.
+
+\begin{equation}
+    T_{W} = \hat{\boldsymbol{\beta}}_{\text{full}}^T\boldsymbol{L}^T(\boldsymbol{L}\boldsymbol{V}_{\beta_{\text{full}}} \boldsymbol{L}^T)^{-1} \boldsymbol{L}\hat{\boldsymbol{\beta}}_{\text{full}}
+    \label{eq:wald_difftest}
+\end{equation}
+
+where $\boldsymbol{V}_{\beta_{\text{full}}} = (\boldsymbol{X}^T\boldsymbol{W}\boldsymbol{X} + \lambda \boldsymbol{S})^{-1}$ is the covariance matrix for $\boldsymbol{\beta}_{\text{full}}$. $T_W$ is asymptotically $\chi^2_z$ distributed. 
+
+The degrees of freedom $z$ correspond to the total effective degrees of freedom (edf) associated with the $G-1$ smooth functions that are dropped under $H_0$.\\
+%Intuitively, only one smooth function is required if $H_0$ holds, which means $G-1$ smooth functions are unnecessary and the effective degrees of freedom these smooth functions consume are essentially redundant.\\
+%Consequently, $z$ is defined as the sum of the effective degrees of freedom associated with these $G-1$ smooth functions. 
+As a conservative estimate, we define $z$ as the sum of the $G-1$ largest edf values.
+
+The p-value obtained from the $\chi^2_z$ distribution of $T_W$ reflects any form of distributional deviation between groups: mean shifts, differences in variance, modality, skewness... In what follows, we refer to this as the GAM p-value.
+\\
+\\
+\textbf{P-value aggregation}
+While the GAM p-value is sensitive for a wide range of distributional differences, it exhibits limited power in detecting pure mean shifts. To improve sensitivity to such shifts, we complement the GAM p-value with a p-value derived from the msqrob2 framework, which is specifically designed to detect mean shifts in proteomics data using a robust linear regression through a mixed model framework \cite{msqrob}.\
+
+The GAM p-value and the msqrob2 p-value are aggregated using the harmonic mean p (HMP) method. The HMP method is particularly suited for combining correlated p-values \cite{harmonicp}. This is inherently the case since mean shifts are one aspect of overall distributional changes.
+The resulting aggregated p-value, termed the 'feature-level aggregated p-value', provides a single, comprehensive measure of evidence against the null hypothesis of no distributional difference among groups for that feature.
+\\
+\\
+\textbf{Post-hoc pairwise comparisons}
+If covariate $C$ comprises more than two groups, post-hoc pairwise comparisons can be conducted. For each of the $\mathcal{C}(\mathcal{C}-1)/2$ pairs of groups (where $\mathcal{C}$ is the number of groups in $C$), a pairwise GAM p-value is calculated using the Wald test framework (see equation \ref{eq:wald_difftest}) with an appropriate contrast matrix $\boldsymbol{L}$. Similarly, pairwise msqrob2 p-values are computed. These pairwise p-values are then aggregated for each group-to-group comparison using the HMP method, yielding 'pairwise aggregated p-values', each representing the evidence against the null hypothesis of identical distributions for that specific pair of groups.
+\\
+\\
+\textbf{Stagewise testing}
+A stage-wise approach is employed to effectively manage the multiple hypotheses arising from feature-level and subsequent pairwise comparisons \cite{stagewise_testing}.
+\begin{itemize}
+    \item Stage 1 (feature level FDR control): The feature level aggregated p-values are adjusted across all features using the Benjamini-Hochberg (BH) procedure to control the family wise error rate (FDR) at 5\%.
+    
+    \item Stage 2 (Pairwise FWER control) is only conducted if stage 1 results in a significant p-value. The pairwise aggregated p-values are adjusted for multiple testing across the $\mathcal{C}(\mathcal{C}-1)/2$ pairwise hypotheses within a feature to control the family wise error rate (FWER) on the BH-adjusted significance level (i.e., the FDR q-value) of the first stage \cite{stager}.
+\end{itemize}
+
+%If covariate $C$ comprises two levels, only stage 1 needs to be conducted.
+
+\subsubsection{Identifying regions of differential density}
+For pairs of groups exhibiting significant distributional differences, the specific regions contributing to these differences can be pinpointed. This is achieved by constructing a difference smoother $\hat{d}$, representing the estimated difference in log-densities between the groups, and its associated simultaneous confidence bands.
+
+Consider the comparison between two groups: $c_1$ and $c_2$ from the groups of $C$. The difference smoother $\hat{d}$ is evaluated across a grid of $N$ points: $x_n$ for $n = (1,...,N)$ spanning the range of $mid_k$ values (see equation \ref{eq:diffsmooth}).
+
+\begin{equation}
+\hat{d}(x_n) = (\hat{\gamma}_{c_1} + \hat{f}_{c_1}(x_n)) - (\hat{\gamma}_{c_2} + \hat{f}_{c_2}(x_n))
+\label{eq:diffsmooth}
+\end{equation}
+
+Note that, $\hat{d}(x_n)$ can also be expressed as a linear combination of the full parameter vector $\hat{\boldsymbol{\beta}}_{\text{full}}$. Let $\boldsymbol{x}_{diff}$ be the contrast row vector for the comparison of $c_1$ and $c_2$ so that the difference smoother can be defined as in equation \ref{eq:diffsmooth_easy}.
+
+\begin{equation}
+\hat{d}(x_n) = x_{\text{diff},n}\hat{\beta}_{\text{full}}
+\label{eq:diffsmooth_easy}
+\end{equation}
+
+The corresponding pointwise standard error is subsequently computed in equation \ref{eq:diffsmooth_se}.
+
+\begin{equation}
+se(\hat{d}(x_n)) = \sqrt{x_{\text{diff,n}}^T\boldsymbol{V}_{\beta_{\text{full}}}x_{\text{diff,n}}}
+\label{eq:diffsmooth_se}
+\end{equation}
+
+where $\boldsymbol{V}_{\beta_{\text{full}}}$ is the covariance matrix for $\hat{\beta}_{\text{full}}$.
+
+A $1-\alpha$ pointwise confidence interval for $\hat{d}(x_n)$ is then given by $\hat{d}(x_n) \pm  z_{\alpha/2}*se(\hat{d}(x_n))$ where $z_{\alpha/2}$ is the $1-\alpha/2$ quantile of the standard normal distribution.\\ 
+To enable valid inference over the entire difference smoother $\hat{d}$ simultaneously, the pointwise confidence intervals need to be adjusted for multiple testing. Essentially, this is equivalent to adjusting for the multiple pointwise tests conducted along the grid. As a computationally efficient approach, we use the Šidák multiple testing correction to transform the pointwise intervals into simultaneous confidence bands \cite{sidak}. The Šidák correction will be conservative because the points are positively correlated \cite{simes}.\\
+Regions where the simultaneous band does not encompass zero, can then be used to prioritize DD regions.
+
+The 95\% simultaneous confidence interval for $\hat{d}(x_n)$ then becomes $\hat{d}(x_n) \pm  z^*se(\hat{d}(x_n))$, where the adjusted critical value $z^*$ is $z_{1-{(1-\alpha_{\text{overall}})}^{1/M}}$. 
+$M$ denotes the effective number of independent locations along the grid, which is conservatively estimated as the maximum of the effective degrees of freedom associated with the two smooth functions being compared $\hat{f}_{c_1}$ and $\hat{f}_{c_2}$. This choice is motivated by the equivalence between such grid tests and omnibus Wald-type tests on the basis function parameters (see equation \ref{eq:wald_difftest}).\\
+
+Similar to the previous section, a stagewise testing approach is used to correct for multiple testing along the features. This means that $\alpha_{\text{overall}}$ corresponds to the BH adjusted significance level of the first stage to control the feature-level FDR at 5\% \cite{stagewise_testing}.\\ 
+Note, however, that we do not provide simultaneous confidence intervals that account for multiple testing along features as well as within feature to address multiple comparisons between groups. Indeed, this would require the extension of the stagewise testing procedure towards multiple stages.
+%when $C$ comprises more than two levels, the differential regions are only corrected for multiple testing along the features and not along the multiple comparisons, as this would require a third stage in the stagewise testing procedure.
+
+\subsubsection{Covariate adjustment}
+In addition to the covariate of interest, \texttt{gamdid} allows users to account for confounding variables through a nuisance formula, enabling applications such as batch correction in multi-batch experimental designs. Both the covariate of interest and the nuisance formula are combined into one model in the \texttt{msqrob2} analysis, and an appropriate contrast is constructed to test for distributional differences in the covariate of interest.\\ 
+To remove the influence of nuisance covariates from the GAM-based inference, partial residuals with respect to the covariate of interest are computed from the \texttt{msqrob2} fit and subsequently used as input to the GAM analysis. This two-step approach is required due to the binning strategy: as a single bin may contain observations that correspond to different groups of the nuisance covariate, direct covariate adjustment within the GAM framework is not feasible.\\
+Note, however, that the uncertainty associated to the regression of the nuisance covariates in step one are not accounted for, so the resulting p-value should be interpreted with caution. 
+
+\subsubsection{Data}
+\begin{itemize}
+    \item \texttt{leduc2022\_pSCoPE}: This data was acquired using pSCoPE technology: a TMT-18plex protocol with prioritized data-dependent acquisition (DDA) carried out by a Thermo Scientific Q-Exactive mass spectrometer \cite{leduc}. The MS data were quantified and identified using MaxQuant version 1.6.17 \cite{maxquant}. We performed quality control by filtering low quality features and filtering cells with a median coefficient of variation greater than 0.6, calculated using the \textit{medianCVperCell} function of the \texttt{scp} package \cite{scp_paper}. The PSM intensities were log2-transformed for variance-stabilization, median centered and summarized to protein-level using median summarization per MS run. Subsequently, samples were normalized through median centering and proteins with more than 95\% missingness were filtered out, resulting in a dataset with 776 melanoma cells and 755 monocytes profiled across 2120 proteins.
+    \item \texttt{petrosius2023\_mES}: This data originates from a label-free scp experiment conducted on mouse embryonic stem cells cultured under two distinct conditions: a serum-free 2i condition (m2i) containing cytokine LIF and inhibitors targeting the MEK and GSK3 pathways, and a serum condition (m15) only containing cytokine LIF \cite{petro}. Data acquisition was performed using an Orbitrap Eclipse Tribrid mass spectrometer operating in data-independent (DIA) acquisition mode. The resulting mass spectrometry data were subsequently analyzed by the authors using Spectronaut v17 \cite{spectronaut}.
+    We performed quality control by removing cells with fewer than 500 detected peptides or a median intensity lower than 11. Features with more than 95\% missing values were also removed. The detected intensities were log2-transformed for variance-stabilization, and the intensities of each cell were centered with the median log2-intensity of the corresponding cell. Subsequently, peptides were summarized to protein-level through median polish summarization. The resulting dataset contains 295 m15 and 269 m2i cells with 2492 proteins.
+\end{itemize}
+Preprocessed protein-level summarized assays from both datasets served as the foundation for our simulations. From the Petrosius dataset, we selected the 269 m2i-condition cells, while from Leduc, we selected the 755 monocytes (in both cases following removal of non-informative cells during preprocessing). Within each selected subset, no systematic biological differences are expected between cells. Consequently, random assignment of cells into two mock groups (A and B) yields a dataset suitable as a mock basis for a controlled two-group comparative analysis.
+
+\subsubsection{Simulation framework}
+The benchmark simulations are based on protein-level mock data from both the Leduc and Petrosius datasets, as described in the Results section. For each dataset, mock groups A and B were formed by random assignment of cells, and distributional signal was introduced in group B for 20\% of randomly selected features. Five types of distributional signal were considered, following the framework of Korthauer et al. (2016) \cite{scdd}:
+\begin{itemize}
+    \item \textbf{DE} A shift equal to 40\% of the feature's standard deviation is added to all observations in group B.
+    \item \textbf{DV} Independent Gaussian noise with mean zero and standard deviation equal to 120\% of the feature's standard deviation is added to all observations in group B, thereby increasing the spread of the distribution without altering its mean.
+    \item \textbf{DB} For 50\% of the observations in group B, a value of 90\% of the feature's standard deviation is added; for the remaining 50\%, the same value is subtracted. This induces a bimodal distribution in group B.
+    \item \textbf{DM} A value of 90\% of the feature's standard deviation is added to 50\% of the observations in group B, creating an asymmetric shift concentrated in one tail.
+    \item \textbf{DP} A value of 90\% of the feature's standard deviation is added to 40\% of the observations in group A and to 70\% of the observations in group B, thereby inducing a difference in the relative weight of a subpopulation.
+\end{itemize}
+
+
+\subsubsection{Implementation}
+The methods for assessing differential distributions are implemented in the \texttt{gamdid} R package that is publicly available through github (github.com/statOmics/gamdid) and will be submitted to Bioconductor.\\
+\texttt{gamdid} builds upon the CRAN packages \texttt{mgcv} \cite{mgcv} and \texttt{harmonicmeanp} \cite{hmp_package} for fitting generalized additive models and p-value aggregation; and on the R/Bioconductor packages \texttt{stageR} \cite{stager} for stagewise testing and \texttt{msqrob2} for detecting shifts in mean abundance \cite{msqrob}. Particularly, \texttt{mgcv} version 1.9.4, \texttt{harmonicmeanp} version 3.0.1, \texttt{stageR} version 1.32.0 and \texttt{msqrob2} version 1.18.0 were used in R version 4.5.3.

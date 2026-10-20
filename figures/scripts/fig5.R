@@ -2,6 +2,12 @@ library("here")
 source(here("R", "packages.R"))
 source(here("R", "utils.R"))
 
+leduc_DE <- readRDS(here("simulation_results", "leduc_DE_0.4"))
+leduc_DV <- readRDS(here("simulation_results", "leduc_DV_1.2"))
+leduc_DB <- readRDS(here("simulation_results", "leduc_DB_0.9"))
+leduc_DM <- readRDS(here("simulation_results", "leduc_DM_0.9"))
+leduc_DP <- readRDS(here("simulation_results", "leduc_DP_1"))
+
 petro_DE <- readRDS(here("simulation_results", "petro_DE_0.4"))
 petro_DV <- readRDS(here("simulation_results", "petro_DV_1.2"))
 petro_DB <- readRDS(here("simulation_results", "petro_DB_0.9"))
@@ -9,36 +15,13 @@ petro_DM <- readRDS(here("simulation_results", "petro_DM_0.9"))
 petro_DP <- readRDS(here("simulation_results", "petro_DP_1"))
 
 
-plot_GAM_DE_petro <- plotFdp(petro_DE$fdp, selection = c("GAM", "msqrob2", "distinct"), title = "DE") +
-  theme_paper() +
-  theme(axis.title.x = element_blank(),
-        plot.title = element_text(size = base_size, face = "bold", hjust = 0.5)) +
-  scale_color_simulations()
-plot_GAM_DV_petro <- plotFdp(petro_DV$fdp, selection = c("GAM", "msqrob2", "distinct"), title = "DV") +
-  theme_paper() +
-  theme(axis.title.x = element_blank(),
-        plot.title = element_text(size = base_size, face = "bold", hjust = 0.5)) +
-  scale_color_simulations()
-plot_GAM_DB_petro <- plotFdp(petro_DB$fdp, selection = c("GAM", "msqrob2", "distinct"), title = "DB") +
-  theme_paper() +
-  theme(axis.title.x = element_blank(),
-        plot.title = element_text(size = base_size, face = "bold", hjust = 0.5)) +
-  scale_color_simulations()
-plot_GAM_DM_petro <- plotFdp(petro_DM$fdp, selection = c("GAM", "msqrob2", "distinct"), title = "DM") +
-  theme_paper() +
-  theme(axis.title.x = element_blank(),
-        plot.title = element_text(size = base_size, face = "bold", hjust = 0.5)) +
-  scale_color_simulations()
-plot_GAM_DP_petro <- plotFdp(petro_DP$fdp, selection = c("GAM", "msqrob2", "distinct"), title = "DP") +
-  theme_paper() +
-  theme(plot.title = element_text(size = base_size, face = "bold", hjust = 0.5)) +
-  scale_color_simulations()
-
-ggarrange(plot_GAM_DE_petro, plot_GAM_DV_petro, plot_GAM_DB_petro, plot_GAM_DM_petro, plot_GAM_DP_petro,
-          common.legend = T, ncol = 1, legend = "top", heights = c(1,1,1,1,1.3)) -> fig5
+fig5 <- plotFdpScenarioGrid(
+  list(Leduc = list(DE = leduc_DE, DV = leduc_DV, DB = leduc_DB, DM = leduc_DM, DP = leduc_DP),
+       Petrosius = list(DE = petro_DE, DV = petro_DV, DB = petro_DB, DM = petro_DM, DP = petro_DP)),
+  selection = c("Aggregated", "distinct"), name = "gamdid")
 
 ggsave(filename = here::here("figures", "output", "jpg", "fig5.jpg"), plot = fig5,
-       width = FIG_WIDTH, height = FIG_HEIGHT_TRIPLE,
+       width = 2 * FIG_WIDTH, height = FIG_HEIGHT_TRIPLE,
        dpi = FIG_DPI)
 ggsave(filename = here::here("figures", "output", "pdf", "fig5.pdf"), plot = fig5,
-       width = FIG_WIDTH, height = FIG_HEIGHT_TRIPLE)
+       width = 2 * FIG_WIDTH, height = FIG_HEIGHT_TRIPLE)

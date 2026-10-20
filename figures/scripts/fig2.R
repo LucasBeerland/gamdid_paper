@@ -27,7 +27,7 @@ p$SampleTypeMelanoma_VS_SampleTypeMonocyte +
 visFit(leduc_dd, i = "proteinSweep", feature = "Q8TDN6", plot = "diff") -> p_diff
 p_diff$SampleTypeMelanoma_VS_SampleTypeMonocyte +
   theme_paper() + theme(title = element_blank(), axis.title.y = element_blank(),
-                        strip.text = element_text(size = base_size, color = "black", face = "plain"),
+                        strip.text = element_text(size = BASE_SIZE, color = "black", face = "plain"),
                         strip.placement = "outside") -> fig2C
 
 # --- Arrow grobs ---

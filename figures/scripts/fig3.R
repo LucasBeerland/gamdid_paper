@@ -29,7 +29,8 @@ simdat$disdiff <- factor(simdat$disdiff, levels = c("DE", "DV", "DB", "DM", "DP"
 
 ggplot(simdat) +
   geom_density(aes(x=val,fill=cov,colour = cov), alpha = 0.3) +
-  facet_wrap(~disdiff, scales = "free", ncol = 1) +
+  facet_wrap(~disdiff, scales = "free", ncol = 1,
+             labeller = as_labeller(KORTHAUER_LABELS)) +
   scale_fill_paper() + theme_minimal() +
   theme(legend.position="none",
         axis.title.x=element_blank(),
@@ -40,7 +41,7 @@ ggplot(simdat) +
         axis.ticks.y=element_blank(),
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
-        strip.text       = element_text(size = base_size, face = "bold")) -> fig3
+        strip.text       = element_text(size = BASE_SIZE, face = "bold")) -> fig3
 
 
 ggsave(filename = here::here("figures", "output", "jpg", "fig3.jpg"), plot = fig3,

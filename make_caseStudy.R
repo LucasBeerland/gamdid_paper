@@ -59,6 +59,10 @@ model <- model.matrix(~unique(colData(sce_distinct)[["group"]]))
 rownames(model) <- unique(sample_v)
 
 library(distinct)
+# distinct uses permutation tests: fix the seed right before the loop so the
+# p-values do not depend on random numbers drawn earlier in the script
+#set.seed(12345)
+set.seed(12345)
 v0 <- rep(NA, nrow(sce_distinct))
 pDis <- data.frame(gene = v0, cluster_id = v0, p_val = v0, p_adj.loc = v0, p_adj.glb = v0, filtered = v0)
 for (i in 1:nrow(sce_distinct)){
@@ -98,7 +102,7 @@ rowData(leduc_case_msqrob)$groupY[setdiff(DD_features, DA_features),]
 rowData(leduc_case_gamdid)[setdiff(DD_features, DA_features),"groupX_VS_groupY"]
 
 
-# Compute execution times -> commented out because this takes about 45 minutes
+# Compute execution times
 # library(microbenchmark)
 #
 # microbenchmark(
@@ -111,4 +115,5 @@ rowData(leduc_case_gamdid)[setdiff(DD_features, DA_features),"groupX_VS_groupY"]
 #   times = 10L
 # )
 
-
+# Record R and package versions in the .Rout file
+sessionInfo()

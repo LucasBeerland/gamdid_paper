@@ -1,0 +1,122 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Journal Article
+% LaTeX Template
+% Version 2.0 (February 7, 2023)
+%
+% This template originates from:
+% https://www.LaTeXTemplates.com
+%
+% Author:
+% Vel (vel@latextemplates.com)
+%
+% License:
+% CC BY-NC-SA 4.0 (https://creativecommons.org/licenses/by-nc-sa/4.0/)
+%
+% NOTE: The bibliography needs to be compiled using the biber engine.
+%
+% The previous LaPreprint version of this manuscript is kept in
+% main_lapreprint.tex.
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%----------------------------------------------------------------------------------------
+%	PACKAGES AND OTHER DOCUMENT CONFIGURATIONS
+%----------------------------------------------------------------------------------------
+
+\documentclass[
+    a4paper,
+    10pt,
+    unnumberedsections,
+    twoside,
+    onecolumn,
+]{LTJournalArticle}
+
+\addbibresource{bibliography/articles.bib} % BibLaTeX bibliography files
+\addbibresource{bibliography/software.bib}
+
+% Just avoiding some rogue fields that cause issues with certain styles
+\AtEveryBibitem{
+    \clearfield{urlyear}
+    \clearfield{urlmonth}
+    \clearlist{language}
+}
+
+\runninghead{gamdid} % A shortened article title to appear in the running head, leave this command empty for no running head
+
+\footertext{\textit{Preprint} (2026)} % Text to appear in the footer, leave this command empty for no footer text
+
+\setcounter{page}{1} % The page number of the first page, set this to a higher number if the article is to be part of an issue or larger work
+
+%----------------------------------------------------------------------------------------
+%	TITLE SECTION
+%----------------------------------------------------------------------------------------
+\usepackage{authblk}
+\usepackage{float}
+\usepackage{lineno}
+\usepackage{subcaption}
+\usepackage{multirow}
+\usepackage{colortbl}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{csquotes}
+\title{gamdid: generalized additive models \\ for differential distributions in single-cell proteomics experiments} % Article title, use manual lines breaks (\\) to beautify the layout
+\author[1]{Lucas Beerland}
+\author[1]{Stijn Vandenbulcke}
+\author[1,2,3]{Christophe Vanderaa}
+\author[2,3,4,5]{Lennart Martens}
+\author[1]{Lieven Clement\thanks{Corresponding author: lieven.clement@ugent.be}}
+
+\affil[1]{Department of Mathematics, Ghent University}
+\affil[2]{Department of Biomolecular Medicine, Ghent University}
+\affil[3]{VIB-UGent Center for Medical Biotechnology}
+\affil[4]{BioOrganic Mass Spectrometry Laboratory (LSMBO), IPHC UMR 7178, University of Strasbourg, CNRS, Strasbourg, France}
+\affil[5]{Infrastructure Nationale de Protéomique ProFI-UAR 2048, Strasbourg, France}
+
+\usepackage[normalem]{ulem}
+
+% Full-width abstract
+\renewcommand{\maketitlehookd}{%
+	\input{sections/abstract}
+}
+
+%----------------------------------------------------------------------------------------
+
+\usepackage{xcolor}
+\newcommand{\lc}[1]{\textcolor{orange}{#1}}
+\newcommand{\lieven}[1]{\textcolor{orange}{#1}}
+\newcommand{\lucas}[1]{\textcolor{blue}{#1}}
+\begin{document}
+\linenumbers
+\raggedbottom
+\maketitle % Output the title section
+
+%----------------------------------------------------------------------------------------
+%	ARTICLE CONTENTS
+%----------------------------------------------------------------------------------------
+
+\input{sections/introduction}
+\input{sections/results}
+\input{sections/discussion}
+\input{sections/methods}
+
+\section{Data Availability}
+All data used in this manuscript are publicly available\textcolor{red}{; no new mass spectrometry data were generated}. The Leduc \cite{leduc} and Petrosius \cite{petro} datasets were downloaded using the \texttt{scpdata} \textcolor{red}{\cite{scp_paper, scp_replication}} package from Bioconductor. \textcolor{red}{Leduc: Slavov laboratory website (\url{https://scp.slavovlab.net/Leduc_et_al_2022}) and MassIVE MSV000089159. Petrosius: MassIVE MSV000092429 and Zenodo (\url{https://zenodo.org/records/8146605}).}
+
+\section{Code Availability}
+All code used to prepare and analyze the datasets and produce the figures of this manuscript is available through GitHub (github.com/statOmics/gamdid).
+Finally, \texttt{gamdid} is published as an open source R-package available through GitHub (github.com/statOmics/gamdid) and will be submitted to Bioconductor.
+
+\section{Acknowledgements}
+This work was supported by grants from Ghent University Special Research Fund [BOF20/GOA/023] (S.V., L.C., C.V.), [BOF21/GOA/033] (L.M.) and [BOF/PDO/2025/018] (L.C., C.V.), Research Foundation Flanders [FWO G062219N] (S.V., L.C.), [G071326N] (L.C.), [G010023N, G028821N] (L.M.) and as WOG [W005325N] (L.M. and L.C.), funding from the European Union’s Horizon 2020 Program [101080544 and 101191739] (L.M.).
+
+\newpage
+
+\input{sections/supplementary}
+%----------------------------------------------------------------------------------------
+%	 REFERENCES
+%----------------------------------------------------------------------------------------
+\newpage
+
+\printbibliography % Output the bibliography
+%----------------------------------------------------------------------------------------
+\end{document}
