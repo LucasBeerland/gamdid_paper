@@ -293,57 +293,59 @@ KORTHAUER_LABELS <- c(
   DP = "DP: differential proportion"
 )
 
-# Stack FDP-TPP curves of the simulation scenarios in one column with a shared
-# x-axis; results is a named list (names in KORTHAUER_LABELS) of simulation results
-plotFdpScenarios <- function(results, selection = c("Aggregated", "distinct"), name = NULL){
+# FDP-TPP panels of the simulation scenarios, to be placed next to each other
+# in one row with a shared y-axis; results is a named list (names in
+# KORTHAUER_LABELS) of simulation results
+fdpScenarioPanels <- function(results, selection = c("Aggregated", "distinct"), name = NULL){
   scenarios <- names(results)
-  plots <- lapply(seq_along(results), function(i){
+  lapply(seq_along(results), function(i){
     p <- plotFdp(results[[i]]$fdp, selection = selection, name = name,
-                 title = KORTHAUER_LABELS[[scenarios[i]]]) +
+                 title = sub(": ", ":\n", KORTHAUER_LABELS[[scenarios[i]]])) +
       theme_paper() +
       theme(plot.title = element_text(size = BASE_SIZE, face = "bold", hjust = 0.5,
                                       margin = margin(b = 2)),
-            plot.margin = margin(1, 3, 1, 3, "mm")) +
+            plot.margin = margin(1, 2, 1, 2, "mm")) +
+      scale_x_continuous(limits = c(0, 0.1), breaks = c(0, 0.05, 0.1),
+                         labels = c("0", "0.05", "0.1")) +
       scale_color_simulations()
-    if (i < length(results)) {
-      p <- p + theme(axis.title.x = element_blank(), axis.text.x = element_blank())
+    if (i > 1) {
+      p <- p + theme(axis.title.y = element_blank(), axis.text.y = element_blank())
     }
     p
   })
-  ggarrange(plotlist = plots, common.legend = TRUE, ncol = 1, legend = "top",
-            heights = c(rep(1, length(plots) - 1), 1.2))
 }
 
-# FDP-TPP curves of the simulation scenarios for several datasets side by side:
-# one column per dataset, one row per scenario, with a shared x-axis per column.
-# datasets is a named list (column headers) of named lists of simulation results
-# (names in KORTHAUER_LABELS)
-plotFdpScenarioGrid <- function(datasets, selection = c("Aggregated", "distinct"), name = NULL){
-  scenarios <- names(datasets[[1]])
-  headers <- lapply(names(datasets), function(d)
-    wrap_elements(full = grid::textGrob(d, y = grid::unit(0.25, "npc"), vjust = 0,
-                                       gp = grid::gpar(fontsize = BASE_SIZE + 2, fontface = "bold"))))
-  panels <- list()
-  for (i in seq_along(scenarios)) {
-    for (j in seq_along(datasets)) {
-      p <- plotFdp(datasets[[j]][[scenarios[i]]]$fdp, selection = selection, name = name,
-                   title = KORTHAUER_LABELS[[scenarios[i]]]) +
-        theme_paper() +
-        theme(plot.title = element_text(size = BASE_SIZE, face = "bold", hjust = 0.5,
-                                        margin = margin(b = 2)),
-              plot.margin = margin(1, 3, 1, 3, "mm")) +
-        scale_color_simulations()
-      if (i < length(scenarios)) {
-        p <- p + theme(axis.title.x = element_blank(), axis.text.x = element_blank())
-      }
-      if (j > 1) p <- p + theme(axis.title.y = element_blank())
-      panels <- c(panels, list(p))
-    }
-  }
-  wrap_plots(c(headers, panels), ncol = length(datasets), byrow = TRUE,
-             heights = c(0.1, rep(1, length(scenarios) - 1), 1.2)) +
+# Shared legend of the FDP-TPP figures: collected in one row below the panels
+fdpLegendTheme <- function(){
+  theme(legend.position = "bottom", legend.title = element_blank(),
+        legend.margin = margin(0, 0, 0, 0))
+}
+
+# FDP-TPP curves of the simulation scenarios next to each other in one row with
+# a shared y-axis; results is a named list (names in KORTHAUER_LABELS) of
+# simulation results
+plotFdpScenarios <- function(results, selection = c("Aggregated", "distinct"), name = NULL){
+  wrap_plots(fdpScenarioPanels(results, selection, name), nrow = 1) +
     plot_layout(guides = "collect") &
-    theme(legend.position = "top")
+    guides(colour = guide_legend(nrow = 1)) &
+    fdpLegendTheme()
+}
+
+# FDP-TPP curves of the simulation scenarios for several datasets below each
+# other: one row of scenarios (as in plotFdpScenarios) per dataset, headed by
+# the dataset name. datasets is a named list (row headers) of named lists of
+# simulation results (names in KORTHAUER_LABELS)
+plotFdpScenarioGrid <- function(datasets, selection = c("Aggregated", "distinct"), name = NULL){
+  rows <- lapply(names(datasets), function(d){
+    header <- wrap_elements(full = grid::textGrob(
+      d, gp = grid::gpar(fontsize = BASE_SIZE + 2, fontface = "bold")))
+    list(header, wrap_plots(fdpScenarioPanels(datasets[[d]], selection, name), nrow = 1))
+  })
+  wrap_plots(do.call(c, rows), ncol = 1,
+             heights = rep(c(0.12, 1), length(datasets))) +
+    plot_layout(guides = "collect") &
+    guides(colour = guide_legend(nrow = 1)) &
+    fdpLegendTheme()
 }
 
 # Bar charts of the number of true (truePositives = TRUE) or false positives of
@@ -368,19 +370,32 @@ plotPositivesGrid <- function(datasets, truePositives = TRUE, alpha = 0.05){
     theme(strip.text = element_text(size = BASE_SIZE + 2, face = "bold"))
 }
 
+# Add the FDR level and number of tests to a compDistr result saved with an
+# older gamdid: visFit needs them to derive the confidence level when no
+# feature is significant (e.g. the mock comparison of the case study)
+addBhMetadata <- function(sce, alpha = 0.05){
+  if (is.null(metadata(sce)$alpha)) metadata(sce)$alpha <- alpha
+  if (is.null(metadata(sce)$n_tests)) {
+    metadata(sce)$n_tests <- sum(!is.na(rowData(sce)$groupX_VS_groupY))
+  }
+  sce
+}
+
 # gamdid visualization of one feature of the spike-in case study: the mock
 # comparison (top), the comparison after spike-in (middle) and a boxplot of the
 # spiked-in cells (bottom), on a common x-axis
 plotCaseFeature <- function(f, fit, mockFit, spikein){
+  fit <- addBhMetadata(fit)
+  mockFit <- addBhMetadata(mockFit)
   xmin <- min(assay(fit)[f, ], na.rm = T)
   xmax <- max(assay(fit)[f, ], na.rm = T)
 
-  visFit(mockFit, feature = f)$groupX_VS_groupY +
+  visFit(mockFit, feature = f) +
     theme_paper() + scale_fill_paper() +
     theme(plot.title = element_blank(),
           axis.title.x = element_blank()) +
     xlim(xmin, xmax) -> ex_caseStudy_mock
-  visFit(fit, feature = f)$groupX_VS_groupY +
+  visFit(fit, feature = f) +
     theme_paper() + scale_fill_paper() +
     theme(plot.title = element_blank(),
           axis.title.x = element_blank()) +

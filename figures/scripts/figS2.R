@@ -17,7 +17,7 @@ petro_DP <- readRDS(here("simulation_results", "petro_DP_1"))
 figS2 <- plotPositivesGrid(
   list(Leduc = list(DE = leduc_DE, DV = leduc_DV, DB = leduc_DB, DM = leduc_DM, DP = leduc_DP),
        Petrosius = list(DE = petro_DE, DV = petro_DV, DB = petro_DB, DM = petro_DM, DP = petro_DP)),
-  truePositives = FALSE)
+  truePositives = TRUE)
 
 ggsave(filename = here::here("figures", "output", "jpg", "figS2.jpg"), plot = figS2,
        width = 2 * FIG_WIDTH, height = FIG_HEIGHT,

@@ -2,19 +2,25 @@ library("here")
 source(here("R", "packages.R"))
 source(here("R", "utils.R"))
 
-leduc_subsample_DE <- readRDS(here("simulation_results", "leduc_DE_0.4_subsample"))
-leduc_subsample_DV <- readRDS(here("simulation_results", "leduc_DV_1.2_subsample"))
-leduc_subsample_DB <- readRDS(here("simulation_results", "leduc_DB_0.9_subsample"))
-leduc_subsample_DM <- readRDS(here("simulation_results", "leduc_DM_0.9_subsample"))
-leduc_subsample_DP <- readRDS(here("simulation_results", "leduc_DP_1_subsample"))
+leduc_DE <- readRDS(here("simulation_results", "leduc_DE_0.4"))
+leduc_DV <- readRDS(here("simulation_results", "leduc_DV_1.2"))
+leduc_DB <- readRDS(here("simulation_results", "leduc_DB_0.9"))
+leduc_DM <- readRDS(here("simulation_results", "leduc_DM_0.9"))
+leduc_DP <- readRDS(here("simulation_results", "leduc_DP_1"))
 
+petro_DE <- readRDS(here("simulation_results", "petro_DE_0.4"))
+petro_DV <- readRDS(here("simulation_results", "petro_DV_1.2"))
+petro_DB <- readRDS(here("simulation_results", "petro_DB_0.9"))
+petro_DM <- readRDS(here("simulation_results", "petro_DM_0.9"))
+petro_DP <- readRDS(here("simulation_results", "petro_DP_1"))
 
-figS3 <- plotFdpScenarios(list(DE = leduc_subsample_DE, DV = leduc_subsample_DV, DB = leduc_subsample_DB,
-                                  DM = leduc_subsample_DM, DP = leduc_subsample_DP),
-                             selection = c("Aggregated", "distinct"), name = "gamdid")
+figS3 <- plotPositivesGrid(
+  list(Leduc = list(DE = leduc_DE, DV = leduc_DV, DB = leduc_DB, DM = leduc_DM, DP = leduc_DP),
+       Petrosius = list(DE = petro_DE, DV = petro_DV, DB = petro_DB, DM = petro_DM, DP = petro_DP)),
+  truePositives = FALSE)
 
 ggsave(filename = here::here("figures", "output", "jpg", "figS3.jpg"), plot = figS3,
-       width = FIG_WIDTH, height = FIG_HEIGHT_TRIPLE,
+       width = 2 * FIG_WIDTH, height = FIG_HEIGHT,
        dpi = FIG_DPI)
 ggsave(filename = here::here("figures", "output", "pdf", "figS3.pdf"), plot = figS3,
-       width = FIG_WIDTH, height = FIG_HEIGHT_TRIPLE)
+       width = 2 * FIG_WIDTH, height = FIG_HEIGHT)

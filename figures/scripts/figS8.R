@@ -2,24 +2,19 @@ library("here")
 source(here("R", "packages.R"))
 source(here("R", "utils.R"))
 
-timing_dat <- data.frame(
-  Method  = factor(c("gamdid", "distinct"), levels = c("gamdid", "distinct")),
-  Runtime = c(16, 256)
-)
+# gamdid visualizations of the features detected only by msqrob2 (A, B) or
+# only by distinct (C, D) in the spike-in case study
 
-ggplot(timing_dat, aes(x = Method, y = Runtime, fill = Method)) +
-  geom_col(width = 0.5) +
-  geom_text(aes(label = paste0(Runtime, "s")),
-            vjust = -0.5, size = BASE_SIZE / .pt) +
-  scale_fill_manual(values = c(gamdid = PALETTE_GROUPS[["gamdid"]],
-                               distinct = PALETTE_GROUPS[["distinct"]])) +
-  scale_y_continuous(expand = expansion(mult = c(0, 0.15))) +
-  labs(x = NULL, y = "Runtime (seconds)") +
-  theme_paper() +
-  theme(legend.position = "none") -> figS8
+leduc_case_gamdid <- readRDS(here("caseStudy_results", "leduc_case_gamdid"))
+leduc_case_mock_gamdid <- readRDS(here("caseStudy_results", "leduc_case_mock_gamdid"))
+names_spikein <- readRDS(here("caseStudy_results", "names_spikein"))
+
+plotCaseFeatureGrid(c("O43149", "P11388", "P31146", "P63241"),
+                    fit = leduc_case_gamdid, mockFit = leduc_case_mock_gamdid,
+                    spikein = names_spikein) -> figS8
 
 ggsave(filename = here::here("figures", "output", "jpg", "figS8.jpg"), plot = figS8,
-       width = FIG_WIDTH, height = FIG_HEIGHT,
+       width = 2 * FIG_WIDTH, height = 2 * FIG_HEIGHT_DOUBLE,
        dpi = FIG_DPI)
 ggsave(filename = here::here("figures", "output", "pdf", "figS8.pdf"), plot = figS8,
-       width = FIG_WIDTH, height = FIG_HEIGHT)
+       width = 2 * FIG_WIDTH, height = 2 * FIG_HEIGHT_DOUBLE)

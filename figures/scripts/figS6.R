@@ -2,19 +2,26 @@ library("here")
 source(here("R", "packages.R"))
 source(here("R", "utils.R"))
 
-leduc_multi_DE <- readRDS(here("simulation_results", "leduc_multi_DE_0.4"))
-leduc_multi_DV <- readRDS(here("simulation_results", "leduc_multi_DV_1.2"))
-leduc_multi_DB <- readRDS(here("simulation_results", "leduc_multi_DB_0.9"))
-leduc_multi_DM <- readRDS(here("simulation_results", "leduc_multi_DM_0.9"))
-leduc_multi_DP <- readRDS(here("simulation_results", "leduc_multi_DP_1"))
+leduc_pep_DE <- readRDS(here("simulation_results", "leduc_pep_DE_0.4"))
+leduc_pep_DV <- readRDS(here("simulation_results", "leduc_pep_DV_1.2"))
+leduc_pep_DB <- readRDS(here("simulation_results", "leduc_pep_DB_0.9"))
+leduc_pep_DM <- readRDS(here("simulation_results", "leduc_pep_DM_0.9"))
+leduc_pep_DP <- readRDS(here("simulation_results", "leduc_pep_DP_1"))
+
+petro_pep_DE <- readRDS(here("simulation_results", "petro_pep_DE_0.4"))
+petro_pep_DV <- readRDS(here("simulation_results", "petro_pep_DV_1.2"))
+petro_pep_DB <- readRDS(here("simulation_results", "petro_pep_DB_0.9"))
+petro_pep_DM <- readRDS(here("simulation_results", "petro_pep_DM_0.9"))
+petro_pep_DP <- readRDS(here("simulation_results", "petro_pep_DP_1"))
 
 
-figS6 <- plotFdpScenarios(list(DE = leduc_multi_DE, DV = leduc_multi_DV, DB = leduc_multi_DB,
-                                  DM = leduc_multi_DM, DP = leduc_multi_DP),
-                             selection = c("Aggregated", "distinct"), name = "gamdid")
+figS6 <- plotFdpScenarioGrid(
+  list(Petrosius = list(DE = petro_pep_DE, DV = petro_pep_DV, DB = petro_pep_DB, DM = petro_pep_DM, DP = petro_pep_DP),
+       Leduc = list(DE = leduc_pep_DE, DV = leduc_pep_DV, DB = leduc_pep_DB, DM = leduc_pep_DM, DP = leduc_pep_DP)),
+  selection = c("Aggregated", "distinct"), name = "gamdid")
 
 ggsave(filename = here::here("figures", "output", "jpg", "figS6.jpg"), plot = figS6,
-       width = FIG_WIDTH, height = FIG_HEIGHT_TRIPLE,
+       width = 2.5 * FIG_WIDTH, height = 2 * FIG_HEIGHT + 0.4,
        dpi = FIG_DPI)
 ggsave(filename = here::here("figures", "output", "pdf", "figS6.pdf"), plot = figS6,
-       width = FIG_WIDTH, height = FIG_HEIGHT_TRIPLE)
+       width = 2.5 * FIG_WIDTH, height = 2 * FIG_HEIGHT + 0.4)

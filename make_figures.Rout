@@ -7,8 +7,6 @@ R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
 Type 'license()' or 'licence()' for distribution details.
 
-  Natural language support but running in an English locale
-
 R is a collaborative project with many contributors.
 Type 'contributors()' for more information and
 'citation()' on how to cite R or R packages in publications.
@@ -28,9 +26,9 @@ Loading required package: SummarizedExperiment
 Loading required package: MatrixGenerics
 Loading required package: matrixStats
 
-Attaching package: 'MatrixGenerics'
+Attaching package: ‘MatrixGenerics’
 
-The following objects are masked from 'package:matrixStats':
+The following objects are masked from ‘package:matrixStats’:
 
     colAlls, colAnyNAs, colAnys, colAvgsPerRowSet, colCollapse,
     colCounts, colCummaxs, colCummins, colCumprods, colCumsums,
@@ -53,40 +51,40 @@ Loading required package: stats4
 Loading required package: BiocGenerics
 Loading required package: generics
 
-Attaching package: 'generics'
+Attaching package: ‘generics’
 
-The following objects are masked from 'package:base':
+The following objects are masked from ‘package:base’:
 
     as.difftime, as.factor, as.ordered, intersect, is.element, setdiff,
     setequal, union
 
 
-Attaching package: 'BiocGenerics'
+Attaching package: ‘BiocGenerics’
 
-The following objects are masked from 'package:stats':
+The following objects are masked from ‘package:stats’:
 
     IQR, mad, sd, var, xtabs
 
-The following objects are masked from 'package:base':
+The following objects are masked from ‘package:base’:
 
-    Filter, Find, Map, Position, Reduce, anyDuplicated, aperm, append,
-    as.data.frame, basename, cbind, colnames, dirname, do.call,
-    duplicated, eval, evalq, get, grep, grepl, is.unsorted, lapply,
-    mapply, match, mget, order, paste, pmax, pmax.int, pmin, pmin.int,
-    rank, rbind, rownames, sapply, saveRDS, table, tapply, unique,
+    anyDuplicated, aperm, append, as.data.frame, basename, cbind,
+    colnames, dirname, do.call, duplicated, eval, evalq, Filter, Find,
+    get, grep, grepl, is.unsorted, lapply, Map, mapply, match, mget,
+    order, paste, pmax, pmax.int, pmin, pmin.int, Position, rank,
+    rbind, Reduce, rownames, sapply, saveRDS, table, tapply, unique,
     unsplit, which.max, which.min
 
 Loading required package: S4Vectors
 
-Attaching package: 'S4Vectors'
+Attaching package: ‘S4Vectors’
 
-The following object is masked from 'package:utils':
+The following object is masked from ‘package:utils’:
 
     findMatches
 
-The following objects are masked from 'package:base':
+The following objects are masked from ‘package:base’:
 
-    I, expand.grid, unname
+    expand.grid, I, unname
 
 Loading required package: IRanges
 Loading required package: Seqinfo
@@ -98,20 +96,20 @@ Welcome to Bioconductor
     'citation("Biobase")', and for packages 'citation("pkgname")'.
 
 
-Attaching package: 'Biobase'
+Attaching package: ‘Biobase’
 
-The following object is masked from 'package:MatrixGenerics':
+The following object is masked from ‘package:MatrixGenerics’:
 
     rowMedians
 
-The following objects are masked from 'package:matrixStats':
+The following objects are masked from ‘package:matrixStats’:
 
     anyMissing, rowMedians
 
 
-Attaching package: 'QFeatures'
+Attaching package: ‘QFeatures’
 
-The following object is masked from 'package:base':
+The following object is masked from ‘package:base’:
 
     sweep
 
@@ -120,9 +118,9 @@ Loading required package: AnnotationHub
 Loading required package: BiocFileCache
 Loading required package: dbplyr
 
-Attaching package: 'AnnotationHub'
+Attaching package: ‘AnnotationHub’
 
-The following object is masked from 'package:Biobase':
+The following object is masked from ‘package:Biobase’:
 
     cache
 
@@ -130,90 +128,90 @@ The following object is masked from 'package:Biobase':
 This is scpdata version 1.20.0.
 Use 'scpdata()' to list available data sets.
 
-Attaching package: 'cowplot'
+Attaching package: ‘cowplot’
 
-The following object is masked from 'package:patchwork':
+The following object is masked from ‘package:patchwork’:
 
     align_plots
 
 
-Attaching package: 'dplyr'
+Attaching package: ‘dplyr’
 
-The following objects are masked from 'package:dbplyr':
+The following objects are masked from ‘package:dbplyr’:
 
     ident, sql
 
-The following object is masked from 'package:Biobase':
+The following object is masked from ‘package:Biobase’:
 
     combine
 
-The following objects are masked from 'package:GenomicRanges':
+The following objects are masked from ‘package:GenomicRanges’:
 
     intersect, setdiff, union
 
-The following object is masked from 'package:Seqinfo':
+The following object is masked from ‘package:Seqinfo’:
 
     intersect
 
-The following objects are masked from 'package:IRanges':
+The following objects are masked from ‘package:IRanges’:
 
     collapse, desc, intersect, setdiff, slice, union
 
-The following objects are masked from 'package:S4Vectors':
+The following objects are masked from ‘package:S4Vectors’:
 
     first, intersect, rename, setdiff, setequal, union
 
-The following objects are masked from 'package:BiocGenerics':
+The following objects are masked from ‘package:BiocGenerics’:
 
     combine, intersect, setdiff, setequal, union
 
-The following object is masked from 'package:generics':
+The following object is masked from ‘package:generics’:
 
     explain
 
-The following object is masked from 'package:matrixStats':
+The following object is masked from ‘package:matrixStats’:
 
     count
 
-The following objects are masked from 'package:stats':
+The following objects are masked from ‘package:stats’:
 
     filter, lag
 
-The following objects are masked from 'package:base':
+The following objects are masked from ‘package:base’:
 
     intersect, setdiff, setequal, union
 
 
-Attaching package: 'tidyr'
+Attaching package: ‘tidyr’
 
-The following object is masked from 'package:S4Vectors':
+The following object is masked from ‘package:S4Vectors’:
 
     expand
 
 
-Attaching package: 'msqrob2'
+Attaching package: ‘msqrob2’
 
-The following object is masked from 'package:gamdid':
+The following object is masked from ‘package:gamdid’:
 
     topFeatures
 
 Loading required package: nlme
 
-Attaching package: 'nlme'
+Attaching package: ‘nlme’
 
-The following object is masked from 'package:dplyr':
+The following object is masked from ‘package:dplyr’:
 
     collapse
 
-The following object is masked from 'package:IRanges':
+The following object is masked from ‘package:IRanges’:
 
     collapse
 
 This is mgcv 1.9-4. For overview type '?mgcv'.
 
-Attaching package: 'stageR'
+Attaching package: ‘stageR’
 
-The following object is masked from 'package:methods':
+The following object is masked from ‘package:methods’:
 
     getMethod
 
@@ -222,96 +220,142 @@ Registered S3 method overwritten by 'car':
   method           from
   na.action.merMod lme4
 
-Attaching package: 'ggpubr'
+Attaching package: ‘ggpubr’
 
-The following object is masked from 'package:cowplot':
+The following object is masked from ‘package:cowplot’:
 
     get_legend
 
-$SampleTypeMelanoma_VS_SampleTypeMonocyte
-
 Scale for fill is already present.
 Adding another scale for fill, which will replace the existing scale.
 Scale for colour is already present.
 Adding another scale for colour, which will replace the existing scale.
-$SampleTypeMelanoma_VS_SampleTypeMonocyte
-
-$SampleTypeA_VS_SampleTypeB
-
-$groupX_VS_groupY
-
+Scale for x is already present.
+Adding another scale for x, which will replace the existing scale.
+Scale for x is already present.
+Adding another scale for x, which will replace the existing scale.
+Scale for x is already present.
+Adding another scale for x, which will replace the existing scale.
+Scale for x is already present.
+Adding another scale for x, which will replace the existing scale.
+Scale for x is already present.
+Adding another scale for x, which will replace the existing scale.
+No feature is significant at FDR 0.05; confidence bands use the most stringent BH level alpha / 1272 = 3.9e-05.
 Scale for fill is already present.
 Adding another scale for fill, which will replace the existing scale.
-$groupX_VS_groupY
-
 Scale for fill is already present.
 Adding another scale for fill, which will replace the existing scale.
-$groupX_VS_groupY
-
+No feature is significant at FDR 0.05; confidence bands use the most stringent BH level alpha / 1272 = 3.9e-05.
 Scale for fill is already present.
 Adding another scale for fill, which will replace the existing scale.
-$groupX_VS_groupY
-
 Scale for fill is already present.
 Adding another scale for fill, which will replace the existing scale.
-$groupX_VS_groupY
-
+No feature is significant at FDR 0.05; confidence bands use the most stringent BH level alpha / 1272 = 3.9e-05.
 Scale for fill is already present.
 Adding another scale for fill, which will replace the existing scale.
-$groupX_VS_groupY
-
 Scale for fill is already present.
 Adding another scale for fill, which will replace the existing scale.
-$groupX_VS_groupY
-
+No feature is significant at FDR 0.05; confidence bands use the most stringent BH level alpha / 1272 = 3.9e-05.
 Scale for fill is already present.
 Adding another scale for fill, which will replace the existing scale.
-$groupX_VS_groupY
-
 Scale for fill is already present.
 Adding another scale for fill, which will replace the existing scale.
-$SampleTypeA_VS_SampleTypeB
-
 Scale for colour is already present.
 Adding another scale for colour, which will replace the existing scale.
 Scale for fill is already present.
 Adding another scale for fill, which will replace the existing scale.
-$SampleTypeA_VS_SampleTypeB
-
 Scale for colour is already present.
 Adding another scale for colour, which will replace the existing scale.
 Scale for fill is already present.
 Adding another scale for fill, which will replace the existing scale.
-$groupX_VS_groupY
-
+Scale for x is already present.
+Adding another scale for x, which will replace the existing scale.
+Scale for x is already present.
+Adding another scale for x, which will replace the existing scale.
+Scale for x is already present.
+Adding another scale for x, which will replace the existing scale.
+Scale for x is already present.
+Adding another scale for x, which will replace the existing scale.
+Scale for x is already present.
+Adding another scale for x, which will replace the existing scale.
+Scale for x is already present.
+Adding another scale for x, which will replace the existing scale.
+Scale for x is already present.
+Adding another scale for x, which will replace the existing scale.
+Scale for x is already present.
+Adding another scale for x, which will replace the existing scale.
+Scale for x is already present.
+Adding another scale for x, which will replace the existing scale.
+Scale for x is already present.
+Adding another scale for x, which will replace the existing scale.
+Scale for x is already present.
+Adding another scale for x, which will replace the existing scale.
+Scale for x is already present.
+Adding another scale for x, which will replace the existing scale.
+Scale for x is already present.
+Adding another scale for x, which will replace the existing scale.
+Scale for x is already present.
+Adding another scale for x, which will replace the existing scale.
+Scale for x is already present.
+Adding another scale for x, which will replace the existing scale.
+Scale for x is already present.
+Adding another scale for x, which will replace the existing scale.
+Scale for x is already present.
+Adding another scale for x, which will replace the existing scale.
+Scale for x is already present.
+Adding another scale for x, which will replace the existing scale.
+Scale for x is already present.
+Adding another scale for x, which will replace the existing scale.
+Scale for x is already present.
+Adding another scale for x, which will replace the existing scale.
+Scale for x is already present.
+Adding another scale for x, which will replace the existing scale.
+Scale for x is already present.
+Adding another scale for x, which will replace the existing scale.
+Scale for x is already present.
+Adding another scale for x, which will replace the existing scale.
+Scale for x is already present.
+Adding another scale for x, which will replace the existing scale.
+Scale for x is already present.
+Adding another scale for x, which will replace the existing scale.
+Scale for x is already present.
+Adding another scale for x, which will replace the existing scale.
+Scale for x is already present.
+Adding another scale for x, which will replace the existing scale.
+Scale for x is already present.
+Adding another scale for x, which will replace the existing scale.
+Scale for x is already present.
+Adding another scale for x, which will replace the existing scale.
+Scale for x is already present.
+Adding another scale for x, which will replace the existing scale.
+Scale for x is already present.
+Adding another scale for x, which will replace the existing scale.
+Scale for x is already present.
+Adding another scale for x, which will replace the existing scale.
+Scale for x is already present.
+Adding another scale for x, which will replace the existing scale.
+Scale for x is already present.
+Adding another scale for x, which will replace the existing scale.
+Scale for x is already present.
+Adding another scale for x, which will replace the existing scale.
+No feature is significant at FDR 0.05; confidence bands use the most stringent BH level alpha / 1272 = 3.9e-05.
 Scale for fill is already present.
 Adding another scale for fill, which will replace the existing scale.
-$groupX_VS_groupY
-
 Scale for fill is already present.
 Adding another scale for fill, which will replace the existing scale.
-$groupX_VS_groupY
-
+No feature is significant at FDR 0.05; confidence bands use the most stringent BH level alpha / 1272 = 3.9e-05.
 Scale for fill is already present.
 Adding another scale for fill, which will replace the existing scale.
-$groupX_VS_groupY
-
 Scale for fill is already present.
 Adding another scale for fill, which will replace the existing scale.
-$groupX_VS_groupY
-
+No feature is significant at FDR 0.05; confidence bands use the most stringent BH level alpha / 1272 = 3.9e-05.
 Scale for fill is already present.
 Adding another scale for fill, which will replace the existing scale.
-$groupX_VS_groupY
-
 Scale for fill is already present.
 Adding another scale for fill, which will replace the existing scale.
-$groupX_VS_groupY
-
+No feature is significant at FDR 0.05; confidence bands use the most stringent BH level alpha / 1272 = 3.9e-05.
 Scale for fill is already present.
 Adding another scale for fill, which will replace the existing scale.
-$groupX_VS_groupY
-
 Scale for fill is already present.
 Adding another scale for fill, which will replace the existing scale.
 There were 50 or more warnings (use warnings() to see the first 50)
@@ -326,4 +370,4 @@ There were 50 or more warnings (use warnings() to see the first 50)
 > 
 > proc.time()
    user  system elapsed 
- 83.066   5.799  89.154 
+ 74.103   5.415  79.872 

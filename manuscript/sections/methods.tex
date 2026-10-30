@@ -1,7 +1,5 @@
 \section{Methods} \label{methods}
-{\color{red}
-
-Below, we first outline the \texttt{gamdid} approach (model equations,
+{Below, we first outline the \texttt{gamdid} approach (model equations,
 test statistics and the simultaneous confidence bands are discussed in
 more detail in the Supplementary materials).
 We subsequently describe the covariate adjustment procedure, the datasets,
@@ -16,7 +14,8 @@ consists of five steps (see Figure \ref{fig:workflow}).
 \textbf{Step 1: Estimating a smooth distribution per group}
 For a given feature, the abundance values of all cells are binned into a histogram,
 using the same bins for every group (see Figure \ref{fig:workflow}, panel A).
-Following Lindsey \cite{lindsay_method} and Efron \cite{efron}, the bin counts
+Following Lindsey \cite{lindsay_method} and Efron \cite{efron}, the bin counts,
+i.e. number of cells with intensities in a specific bin,
 can be treated as Poisson counts.
 \\
 We then model the bin counts as a function of the bin midpoints using a
@@ -30,8 +29,8 @@ and bin $k$ with midpoint $mid_k$.
     \label{eq:GAM_simple}
 \end{equation}
 where $f_c$ is a flexible smooth function that captures the shape of the distribution of group $c$.
-The counts are normalized using an offset, which allows us to interpret the curves
-as densities.
+The counts are normalized using an offset, which allows us to directly interpret the curves $f_c$
+as log-transformed densities.
 \\
 \\
 \textbf{Step 2: Testing whether the distributions differ}
